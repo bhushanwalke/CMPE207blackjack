@@ -1,0 +1,27 @@
+Implement a multi-threaded, simple web server, 207httpd, which can serve static HTML files and jpeg/gif image files.
+
+The Webserver program has been implmented using multithreading and by using the Pthreads in Linux.
+I have used the HTML files and the images provided by the professor.
+
+1) we are creating the TCP socket for the connection and once the server program listens to a new connection we create a thread to handle the client request.
+
+2)The client request is taken as the GET request and is parsed accordingly and sends the requested index page to the client.We need to specify the content type in the program as this makes a big difference while printing the image fiels on the web page.
+
+3) I are maintaing a configuration file where we only mention the port number on which the server should listen for connections.We can mention any port number here and the server will start listening at hat particular port.
+
+4)I have Maintained a seperate method that maintains the total no of Sucessful and unsucessful requests and also the total size of files that have been processed by the server.
+
+Steps involved for the webserver program execution.
+1) Write the desirable port no in the config.conf file
+2) execute the program with the obj file created.
+3)Go to the brower and in the URL type localhost:portno 
+you will see the web page getting loaded on to the screen.
+
+
+Program Execution steps.
+used the g++ command , we have given file name and the output and the name of the object file as shown below this will compile and creat the object file later for execution we use the obj file ./server
+g++ -pthread server.cpp -o server
+
+
+Reference:
+http://www.ibm.com/developerworks/systems/library/es-nweb/sidefile1.html

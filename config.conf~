@@ -1,3 +1,2 @@
 PORT=8081
 GET=index.html
-PATH=/httpd

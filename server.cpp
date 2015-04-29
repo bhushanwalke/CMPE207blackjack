@@ -22,8 +22,31 @@
 #define FILENAME "config.conf"
 #define MAXBUF 102
 #define DELIM "="
+static char buffer[BUFSIZE + 1]; /* static so zero filled */
 
 using namespace std;
+
+
+void join_table(int);
+void send_and_close_socket(int);
+
+/* User structure */
+struct user {
+	string name;
+	int id;
+	float balance;
+	user * next;
+};
+
+/* Structure for saving tables */
+struct table {
+	int id;
+	int no_of_users;
+	user * users;
+	table * next;
+};
+
+table * tables;
 
 /* structure define for reading the configuration file*/
 struct config {
@@ -76,6 +99,60 @@ bad_requests;
 static long total_filesize;
 void handle_request(int socketfd);
 void system_details();
+
+
+void init_casino(){
+	table * temp, *current = NULL;
+	for(int i=0; i<3 ; i++){
+	
+		temp = new table;
+		if(tables == NULL){
+			tables = temp;
+			tables->next = NULL;
+			current = tables;
+		}else{
+			temp->next = NULL;
+			current->next = temp;
+			current = temp;
+		}
+
+	}
+}
+
+//load all users(struct user link list) and their info from text file
+void load_user_data(){
+
+}
+
+//search for this id. Return pointer to that node if present otherwise create new node
+user* search_or_create_user(int user_id){
+
+}
+//search for available tables and return their ids in an array
+int* search_available_tables(){
+
+}
+
+void join_table(int table_no){
+//search if already playing on any other table
+// look if the requested table is free and add
+}
+
+void create_table(){
+
+}
+
+void hit(int user_id){
+
+}
+
+void stand(int user_id){
+
+}
+
+void leave_table(){
+
+}
 
 int main(int argc, char **argv) {
 //pid_t pid;
@@ -140,7 +217,7 @@ void handle_request(int socketfd) {
 	char * fstr;
 	char * file_folder;
 	char folder_path[100];
-	static char buffer[BUFSIZE + 1]; /* static so zero filled */
+	
 
 	ret = read(socketfd, buffer, BUFSIZE); /* read Web request in one go */
 	if (ret == 0 || ret == -1) { /* read failure stop now */
@@ -173,22 +250,16 @@ void handle_request(int socketfd) {
 	}
 
 
+/*
+create various parser for different requests
 	if (strncmp(&buffer[0], "GET /join-table\0", 9) == 0 || strncmp(&buffer[0], "get /join_table\0", 9) == 0 ){
 
-		//printf("Buffer %d", buffer[16]);
-		int tableNo = (int)buffer[16] - 48;
-		//cout<<"Table No:"<<tableNo<<endl;
+		send_and_close_socket(socketfd);
+	}
+	*/
+	if (strncmp(&buffer[0], "GET /join-table\0", 9) == 0 || strncmp(&buffer[0], "get /join_table\0", 9) == 0 ){
 
-		(void) sprintf(buffer,
-					"HTTP/1.1 200 OK\nServer: 207httpd/%d.0\nContent-Length: %ld\nConnection: close\nContent-Type: %s\n\n{\"a\":1,\"b\":12}\n",
-					VERSION, 14, "text/html"); /* Header + a blank line */
-
-
-		(void) write(socketfd, buffer, strlen(buffer));
-
-		sleep(1); /* allow socket to drain before signalling the socket is closed */
-		close(socketfd);
-		pthread_exit(NULL);
+		send_and_close_socket(socketfd);
 	}
 	else if (!strncmp(&buffer[0], "GET /\0", 6) || !strncmp(&buffer[0], "get /\0", 6)) /* convert no filename to index file */
 	{
@@ -310,6 +381,25 @@ void handle_request(int socketfd) {
 		(void) write(socketfd, buffer, ret);
 
 	}
+	sleep(1); /* allow socket to drain before signalling the socket is closed */
+	close(socketfd);
+	pthread_exit(NULL);
+}
+
+
+void send_and_close_socket(int socketfd){
+
+	//printf("Buffer %d", buffer[16]);
+	int tableNo = (int)buffer[16] - 48;
+	cout<<"Table No:"<<tableNo<<endl;
+
+	(void) sprintf(buffer,
+				"HTTP/1.1 200 OK\nServer: 207httpd/%d.0\nContent-Length: %ld\nConnection: close\nContent-Type: %s\n\n{\"a\":1,\"b\":2}\n",
+				VERSION, 14, "text/html"); /* Header + a blank line */
+
+
+	(void) write(socketfd, buffer, strlen(buffer));
+
 	sleep(1); /* allow socket to drain before signalling the socket is closed */
 	close(socketfd);
 	pthread_exit(NULL);

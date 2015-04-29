@@ -12,14 +12,16 @@ Here is a brief description of <a href="httpd.html">207httpd</a>.
 </p>
 
 
-<button id="button">Join</button>
+<button class="join-table" id="1">Join Table 1</button>
+<button class="join-table" id="2">Join Table 2</button>
+<button class="join-table" id="3">Join Table 3</button>
 
 
 <script>
  $(document).ready(function(){
-	$("#button").click(function(){
+	$(".join-table").click(function(){
 	        $.ajax({
-	        	url: "http://127.0.0.1:8082/join-table/2", 
+	        	url: "http://127.0.0.1:8082/join-table/"+$(this).attr("id"), 
 	        	success: function(result){
 	        		obj = JSON.parse(result);
 	        		console.log(obj);

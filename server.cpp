@@ -10,7 +10,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <iostream>
-#include<sys/stat.h>
+#include <sys/stat.h>
 #include <pthread.h>
 #define VERSION 23
 #define BUFSIZE 8096
@@ -142,28 +142,31 @@ int main(int argc, char **argv)
 void handle_request(int socketfd)
 {				
 
-				int j, file_fd, buflen;
-				long i, ret, len;
-				char * fstr;
-				static char buffer[BUFSIZE+1]; /* static so zero filled */
+		int j, file_fd, buflen;
+		long i, ret, len;
+		char * fstr;
+		char * file_folder;
+		char folder_path[100];
+		static char buffer[BUFSIZE+1]; /* static so zero filled */
 
-				ret =read(socketfd,buffer,BUFSIZE); 	/* read Web request in one go */
-				if(ret == 0 || ret == -1) {	/* read failure stop now */
-				printf("failed to read browser request");
-				pthread_mutex_lock(&mymutex); 
-				bad_requests += 1;
-				pthread_mutex_unlock(&mymutex);
-				//exit(0);
-				}
+		ret =read(socketfd,buffer,BUFSIZE); 	/* read Web request in one go */
+		if(ret == 0 || ret == -1) {	/* read failure stop now */
+			printf("failed to read browser request");
+			pthread_mutex_lock(&mymutex); 
+			bad_requests += 1;
+			pthread_mutex_unlock(&mymutex);
+			exit(0);
+		}
 		
 		//printf("New thread called");
 		if(ret > 0 && ret < BUFSIZE)	/* return code is valid chars */
 		buffer[ret]=0;		/* terminate the buffer */
 		else buffer[0]=0;
-		for(i=0;i<ret;i++)	/* remove CF and LF characters */
+		for(i=0;i<ret;i++){	/* remove CF and LF characters */
+			
 			if(buffer[i] == '\r' || buffer[i] == '\n')
 				buffer[i]='*';
-
+		}
 		if( strncmp(buffer,"GET ",4) && strncmp(buffer,"get ",4) ) {
 		printf("Only simple GET operation supported:%s",buffer);
 		}
@@ -178,10 +181,10 @@ void handle_request(int socketfd)
 
 		if( !strncmp(&buffer[0],"GET /\0",6) || !strncmp(&buffer[0],"get /\0",6) ) /* convert no filename to index file */
 		{				
-		(void)strcpy(buffer,"GET /httpd/index.html");
-		pthread_mutex_lock(&mymutex); 
-		good_requests += 1;
-		pthread_mutex_unlock(&mymutex);		
+			(void)strcpy(buffer,"GET /httpd/index.html");
+			pthread_mutex_lock(&mymutex); 
+			good_requests += 1;
+			pthread_mutex_unlock(&mymutex);		
 		}
 		buflen=strlen(buffer);
 		fstr = (char *)0;
@@ -194,14 +197,45 @@ void handle_request(int socketfd)
 			//break;
 		}
 
+		int file_folder_len = 0;// = strlen(file_folder);
 		extension = "jpg";
 		len = strlen(extension.c_str());
 		if( !strncmp(&buffer[buflen-len], extension.c_str(), len)) {
 			fstr = "/httpd/image/jpeg";
+			file_folder = "httpd/images/";
+			
+			file_folder_len = strlen(file_folder);
+
+
+			for(i=0;i<file_folder_len;i++){	
+				
+				printf("%c", file_folder[i]);
+				folder_path[i] = file_folder[i];
+			}
+			printf("buffer len = %d\n", buflen);
+			int k = 0;
+			cout << "\n buffer = ";
+			for(int j=file_folder_len,k = 5; j<file_folder_len+buflen-5; j++,k++){	
+			
+				
+				folder_path[j] = buffer[k];
+				//printf("%c", buffer[k] );
+				printf("%c", folder_path[j] );
+			}
+			cout << "\n";
 			//break;
 		}
+		cout << "\n";
+		for(i=0;i<25;i++){	
+		
+			printf("%c", folder_path[i] );
+		}
 
-	
+		cout << "\n";
+		for(i=0;i<25;i++){	
+		
+			printf("%c", buffer[i] );
+		}
 		extension = "gif";
 		len = strlen(extension.c_str());
 		if( !strncmp(&buffer[buflen-len], extension.c_str(), len)) {
@@ -211,27 +245,39 @@ void handle_request(int socketfd)
 		//}
 		
 		if(fstr == 0){
-		pthread_mutex_lock(&mymutex); 
-		bad_requests += 1;
-		pthread_mutex_unlock(&mymutex);		
-		printf("file extension type not supported:%s",buffer);
+			pthread_mutex_lock(&mymutex); 
+			bad_requests += 1;
+			pthread_mutex_unlock(&mymutex);		
+			printf("file extension type not supported:%s",buffer);
 		}
-		if(( file_fd = open(&buffer[5],O_RDONLY)) == -1) {  
-	         write(socketfd, "HTTP/1.1 404 Not Found\nContent-Length: 185\nConnection: close\nContent-Type: text/html\n\n<html><head>\n<title>404 Not Found</title>\n</head><body>\n<h1>Forbidden</h1>\nThe requested URL, file type or operation is not allowed on this simple static file webserver.\n</body></html>\n",280);
+		
+
+		if(file_folder_len == 0){
+
+			if(( file_fd = open(&buffer[5],O_RDONLY)) == -1) {  
+		         write(socketfd, "HTTP/1.1 404 Not Found\nContent-Length: 185\nConnection: close\nContent-Type: text/html\n\n<html><head>\n<title>404 Not Found</title>\n</head><body>\n<h1>Forbidden</h1>\nThe requested URL, file type or operation is not allowed on this simple static file webserver.\n</body></html>\n",280);
+
+			}
+		}else{
+			if(( file_fd = open(folder_path,O_RDONLY)) == -1) {  
+		         write(socketfd, "HTTP/1.1 404 Not Found\nContent-Length: 185\nConnection: close\nContent-Type: text/html\n\n<html><head>\n<title>404 Not Found</title>\n</head><body>\n<h1>Forbidden</h1>\nThe requested URL, file type or operation is not allowed on this simple static file webserver.\n</body></html>\n",280);
+
+			}
 		}
 		
 		struct stat filestatus;
 
 		int rc = fstat(file_fd, &filestatus);
-        if (rc < 0)printf("error opening the file\n");
+        if (rc < 0)
+        	printf("error opening the file\n");
         fflush(stdout);
         pthread_mutex_lock(&mymutex);
-            total_filesize += filestatus.st_size;
+        total_filesize += filestatus.st_size;
         pthread_mutex_unlock(&mymutex); 
 
 		len = (long)lseek(file_fd, (off_t)0, SEEK_END); /* lseek to the file end to find the length */
 	 	(void)lseek(file_fd, (off_t)0, SEEK_SET); /* lseek back to the file start ready for reading */
-          	(void)sprintf(buffer,"HTTP/1.1 200 OK\nServer: 207httpd/%d.0\nContent-Length: %ld\nConnection: close\nContent-Type: %s\n\n", VERSION,len, fstr); /* Header + a blank line */
+        (void)sprintf(buffer,"HTTP/1.1 200 OK\nServer: 207httpd/%d.0\nContent-Length: %ld\nConnection: close\nContent-Type: %s\n\n", VERSION,len, fstr); /* Header + a blank line */
 	
 		//logger(LOG,"Header",buffer,hit);
 		(void)write(socketfd,buffer,strlen(buffer));
@@ -248,15 +294,15 @@ void handle_request(int socketfd)
 
 void system_details()
 {
-while(1)
-{
-sleep(10);
-cout<<"\n======================================================\n";
-cout<<"Number of successful Requests:"<<good_requests<<endl;
-cout<<"Number of Un-successful Requests:"<<bad_requests<<endl;
-cout<<"Tolal size of the file accessed:"<<total_filesize<<endl;
+	while(1)
+	{
+		sleep(10);
+		cout<<"\n======================================================\n";
+		cout<<"Number of successful Requests:"<<good_requests<<endl;
+		cout<<"Number of Un-successful Requests:"<<bad_requests<<endl;
+		cout<<"Tolal size of the file accessed:"<<total_filesize<<endl;
 
-fflush(stdout);
-}
+		fflush(stdout);
+	}
 }
 

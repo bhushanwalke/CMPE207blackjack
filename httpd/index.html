@@ -11,9 +11,6 @@
 Here is a brief description of <a href="httpd.html">207httpd</a>.
 </p>
 
-<script>
-for()
-</script>
 
 <button id="button">Join</button>
 
@@ -21,19 +18,19 @@ for()
 <script>
  $(document).ready(function(){
 	$("#button").click(function(){
-		console.log("Button clicked");
-		//window.location.replace("http://127.0.0.1:8081/join-table/2");
-		//window.location.href="http://127.0.0.1:8081/join-table/5";
 	        $.ajax({
-	        	url: "http://127.0.0.1:8081/join-table/2", 
+	        	url: "http://127.0.0.1:8082/join-table/2", 
 	        	success: function(result){
-	        		console.log(result);
-	            	$("#player-score").html("result updated");
+	        		obj = JSON.parse(result);
+	        		console.log(obj);
+	        		console.log(obj.a);	
+	        		console.log(obj.b);	
+	            	
 	        	},
 	        	error: function(result){
-	        		console.log(result);
-	        		$("#player-score").html("result updated w/ error" + result);	
-	        		console.log(result);	
+	        		
+	        		console.log("Error");	
+	        		
 	        	}
 	    });
 	    });

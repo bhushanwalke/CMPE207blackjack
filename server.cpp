@@ -172,35 +172,37 @@ void handle_request(int socketfd) {
 		}
 	}
 
-	if (!strncmp(&buffer[0], "GET /join-table\0", 16) || !strncmp(&buffer[0], "get /join_table\0", 16)){
 
-		printf("Buffer %d", buffer[16]);
+	if (strncmp(&buffer[0], "GET /join-table\0", 9) == 0 || strncmp(&buffer[0], "get /join_table\0", 9) == 0 ){
+
+		//printf("Buffer %d", buffer[16]);
 		int tableNo = (int)buffer[16] - 48;
-		cout<<"Table No:"<<tableNo<<endl;
+		//cout<<"Table No:"<<tableNo<<endl;
 
 		(void) sprintf(buffer,
-					"HTTP/1.1 200 OK\nServer: 207httpd/%d.0\nContent-Length: %ld\nConnection: close\nContent-Type: %s\n\n",
-					VERSION, strlen(buffer), "text/html"); /* Header + a blank line */
+					"HTTP/1.1 200 OK\nServer: 207httpd/%d.0\nContent-Length: %ld\nConnection: close\nContent-Type: %s\n\n{\"a\":1,\"b\":12}\n",
+					VERSION, 14, "text/html"); /* Header + a blank line */
 
 
-			(void) write(socketfd, buffer, strlen(buffer));
-
+		(void) write(socketfd, buffer, strlen(buffer));
 
 		sleep(1); /* allow socket to drain before signalling the socket is closed */
-			close(socketfd);
+		close(socketfd);
+		pthread_exit(NULL);
 	}
 	else if (!strncmp(&buffer[0], "GET /\0", 6) || !strncmp(&buffer[0], "get /\0", 6)) /* convert no filename to index file */
-		{
-		(void) strcpy(buffer, "GET /httpd/index.html");
-		pthread_mutex_lock(&mymutex);
-		good_requests += 1;
-		pthread_mutex_unlock(&mymutex);
-		}
+	{
+	(void) strcpy(buffer, "GET /httpd/index.html");
+	pthread_mutex_lock(&mymutex);
+	good_requests += 1;
+	pthread_mutex_unlock(&mymutex);
+	}
 	buflen = strlen(buffer);
 	fstr = (char *) 0;
 
+
 	string extension = "html";
-	//for(i=0;extensions[i].ext != 0;i++) {
+
 	len = strlen(extension.c_str());
 	if (!strncmp(&buffer[buflen - len], extension.c_str(), len)) {
 		fstr = "text/html";
@@ -234,7 +236,6 @@ void handle_request(int socketfd) {
 		fstr = "/httpd/images/gif";
 		file_folder = "httpd/images/";
 		file_folder_len = strlen(file_folder);
-		//break;
 	}
 
 	extension = "png";
@@ -243,24 +244,20 @@ void handle_request(int socketfd) {
 		fstr = "/httpd/images/png";
 		file_folder = "httpd/images/";
 		file_folder_len = strlen(file_folder);
-		//break;
 	}
-	//}
+	
 	if (file_folder_len != 0) {
 		for (i = 0; i < file_folder_len; i++) {
-
-			//printf("%c", file_folder[i]);
 			folder_path[i] = file_folder[i];
 		}
-		//printf("buffer len = %d\n", buflen);
+		
 		int k = 0;
-		cout << "\n buffer = ";
+		
 		for (int j = file_folder_len, k = 5; j < file_folder_len + buflen - 5;
 				j++, k++) {
 
 			folder_path[j] = buffer[k];
-			//printf("%c", buffer[k] );
-			//printf("%c", folder_path[j]);
+		
 		}
 		cout << "\n";
 

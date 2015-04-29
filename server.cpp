@@ -12,6 +12,7 @@
 #include <iostream>
 #include <sys/stat.h>
 #include <pthread.h>
+#include <string>
 #define VERSION 23
 #define BUFSIZE 8096
 #define ERROR      42
@@ -28,7 +29,7 @@ using namespace std;
 struct config {
 	char port[MAXBUF];
 	char getcmd[MAXBUF];
-	char path[MAXBUF];
+	//char path[MAXBUF];
 };
 
 /* medhod which reads the configuration file*/
@@ -51,9 +52,10 @@ struct config get_config(char *filename) {
 			} else if (i == 1) {
 				memcpy(configstruct.getcmd, cfline, strlen(cfline));
 				//printf("%s",configstruct.ccserver);
-			} else if (i == 2) {
-				memcpy(configstruct.path, cfline, strlen(cfline));
-			}
+	}
+		//		else if (i == 2) {
+//				memcpy(configstruct.path, cfline, strlen(cfline));
+//			}
 
 			i++;
 		} // End while
@@ -111,8 +113,8 @@ int main(int argc, char **argv) {
 		exit(0);
 	}
 	cout << "\n              Server is Listening" << endl;
-	if (pthread_create(&threads[0], NULL, (void * (*)(void *))system_details, NULL) < 0)
-	printf("Could not call system datils function");
+//	if (pthread_create(&threads[0], NULL, (void * (*)(void *))system_details, NULL) < 0)
+//	printf("Could not call system datils function");
 
 	for (i = 1;; i++) {
 		length = sizeof(cli_addr);
@@ -170,13 +172,30 @@ void handle_request(int socketfd) {
 		}
 	}
 
-	if (!strncmp(&buffer[0], "GET /\0", 6) || !strncmp(&buffer[0], "get /\0", 6)) /* convert no filename to index file */
-			{
+	if (!strncmp(&buffer[0], "GET /join-table\0", 16) || !strncmp(&buffer[0], "get /join_table\0", 16)){
+
+		printf("Buffer %d", buffer[16]);
+		int tableNo = (int)buffer[16] - 48;
+		cout<<"Table No:"<<tableNo<<endl;
+
+		(void) sprintf(buffer,
+					"HTTP/1.1 200 OK\nServer: 207httpd/%d.0\nContent-Length: %ld\nConnection: close\nContent-Type: %s\n\n",
+					VERSION, strlen(buffer), "text/html"); /* Header + a blank line */
+
+
+			(void) write(socketfd, buffer, strlen(buffer));
+
+
+		sleep(1); /* allow socket to drain before signalling the socket is closed */
+			close(socketfd);
+	}
+	else if (!strncmp(&buffer[0], "GET /\0", 6) || !strncmp(&buffer[0], "get /\0", 6)) /* convert no filename to index file */
+		{
 		(void) strcpy(buffer, "GET /httpd/index.html");
 		pthread_mutex_lock(&mymutex);
 		good_requests += 1;
 		pthread_mutex_unlock(&mymutex);
-	}
+		}
 	buflen = strlen(buffer);
 	fstr = (char *) 0;
 
@@ -201,13 +220,13 @@ void handle_request(int socketfd) {
 	cout << "\n";
 	for (i = 0; i < 25; i++) {
 
-		printf("%c", folder_path[i]);
+		//printf("%c", folder_path[i]);
 	}
 
 	cout << "\n";
 	for (i = 0; i < 25; i++) {
 
-		printf("%c", buffer[i]);
+		//printf("%c", buffer[i]);
 	}
 	extension = "gif";
 	len = strlen(extension.c_str());
@@ -230,10 +249,10 @@ void handle_request(int socketfd) {
 	if (file_folder_len != 0) {
 		for (i = 0; i < file_folder_len; i++) {
 
-			printf("%c", file_folder[i]);
+			//printf("%c", file_folder[i]);
 			folder_path[i] = file_folder[i];
 		}
-		printf("buffer len = %d\n", buflen);
+		//printf("buffer len = %d\n", buflen);
 		int k = 0;
 		cout << "\n buffer = ";
 		for (int j = file_folder_len, k = 5; j < file_folder_len + buflen - 5;
@@ -241,7 +260,7 @@ void handle_request(int socketfd) {
 
 			folder_path[j] = buffer[k];
 			//printf("%c", buffer[k] );
-			printf("%c", folder_path[j]);
+			//printf("%c", folder_path[j]);
 		}
 		cout << "\n";
 
@@ -286,7 +305,7 @@ void handle_request(int socketfd) {
 			"HTTP/1.1 200 OK\nServer: 207httpd/%d.0\nContent-Length: %ld\nConnection: close\nContent-Type: %s\n\n",
 			VERSION, len, fstr); /* Header + a blank line */
 
-	//logger(LOG,"Header",buffer,hit);
+
 	(void) write(socketfd, buffer, strlen(buffer));
 
 	/* send file in 8KB block - last block may be smaller */

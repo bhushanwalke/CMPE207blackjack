@@ -31,13 +31,14 @@ static char buffer[BUFSIZE + 1]; /* static so zero filled */
 using namespace std;
 
 static int callback(void *data, int argc, char **argv, char **azColName);
-int login_auth(char *un, char *pw);
-void join_table(int);
+
 #define DB "database.db"
 
 bool isOpenDB = false;
 sqlite3 *dbfile;
 
+int login_auth(char *un, char *pw);
+void join_table(int);
 int create_user(char *un, char *pw);
 bool ConnectDB();
 void DisonnectDB();

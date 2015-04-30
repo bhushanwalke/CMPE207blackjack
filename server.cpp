@@ -30,21 +30,22 @@ static char buffer[BUFSIZE + 1]; /* static so zero filled */
 
 using namespace std;
 
-static int callback(void *data, int argc, char **argv, char **azColName);
+
 
 #define DB "database.db"
 
 bool isOpenDB = false;
 sqlite3 *dbfile;
 
-int login_auth(char *un, char *pw);
+user * login_auth(char *un, char *pw);
+void join_table(int);
 int create_user(char *un, char *pw);
 bool ConnectDB();
 void DisonnectDB();
 void send_and_close_socket(int, char *);
 void shuffle_array(int *, int *);
 int evaluate_hand(int);
-void assign_table(int);
+void assign_table(user*);
 struct deck{
 	int card_img_no[52];
 	int card_value[52];
@@ -512,8 +513,9 @@ void handle_request(int socketfd) {
 
 		cout << "\nUsername = " << username;
 		cout << "\nPassword = " << password;
-		int res = login_auth(username, password);
-		if(res > 0){
+		user * res = login_auth(username, password);
+
+		if(res == 1){
 			assign_table(res);
 			(void) strcpy(buffer, "GET /httpd/game.html");
 		}
@@ -747,96 +749,103 @@ void send_and_close_socket(int socketfd, char *buffer){
 	pthread_exit(NULL);
 }
 
-int login_auth(char *un, char *pw) {
-	return 1;
-	// string s;
-	// vector<string> data;
-	// isOpenDB = ConnectDB();
-	// char buff[1024];
-	// sqlite3_stmt *statement;
-	// sprintf(buff,
-	// 		"SELECT id, balance from users where username = '%s' and password = '%s';",
-	// 		un, pw);
-	// cout << "\n query:" << buff;
-	// char *query = buff;
+user * login_auth(char *un, char *pw) {
 
-	// if (sqlite3_prepare(dbfile, query, -1, &statement, 0) == SQLITE_OK) {
-	// 	int ctotal = sqlite3_column_count(statement);
-	// 	int res = 0;
+	 string s;
+	 vector<string> data;
+	 isOpenDB = ConnectDB();
+	 char buff[1024];
+	 sqlite3_stmt *statement;
+	 sprintf(buff,
+	 		"SELECT id, balance from users where username = '%s' and password = '%s';",
+	 		un, pw);
+	 cout << "\n query:" << buff;
+	 char *query = buff;
 
-	// 	while (1)
+	 if (sqlite3_prepare(dbfile, query, -1, &statement, 0) == SQLITE_OK) {
+	 	int ctotal = sqlite3_column_count(statement);
+	 	int res = 0;
 
-	// 	{
-	// 		res = sqlite3_step(statement);
+	 	while (1)
 
-	// 		if (res == SQLITE_ROW) {
-	// 			for (int i = 0; i < ctotal; i++) {
-	// 				data.push_back((char*) sqlite3_column_text(statement, i));
-	// 			}
+	 	{
+	 		res = sqlite3_step(statement);
 
-	// 			cout << endl;
-	// 		}
+	 		if (res == SQLITE_ROW) {
+	 			for (int i = 0; i < ctotal; i++) {
+	 				data.push_back((char*) sqlite3_column_text(statement, i));
+	 			}
 
-	// 		if (res == SQLITE_DONE) {
-	// 			//cout << "\nSize:" << data.size();
-	// 			for (size_t n = 0; n < data.size(); n++) {
-	// 				cout << "\ndata:" << data[n] << " ";
-	// 				cout << endl;
-	// 			}
+	 			cout << endl;
+	 		}
 
-	// 			if (data.size() == 0) {
-	// 				cout << "\nInvalid User Details, creating new user";
-	// 				//create_user(un, pw);
-	// 				return 0;
-	// 			}
-	// 			break;
-	// 		}
+	 		if (res == SQLITE_DONE) {
+	 			//cout << "\nSize:" << data.size();
+	 			for (size_t n = 0; n < data.size(); n++) {
+	 				cout << "\ndata:" << data[n] << " ";
+	 				cout << endl;
+	 			}
 
-	// 	}
 
-	// 	return 1;
-	// }
+	 		user *u1;
+	 		u1->id = data[0];
+	 		u1->balance = data[1];
+	 		u1->name = un;
+	 		u1->no_of_cards = 0;
+
+	 			if (data.size() == 0) {
+	 				cout << "\nInvalid User Details, creating new user";
+	 				//create_user(un, pw);
+	 				return 0;
+	 			}
+	 			break;
+	 		}
+
+	 	}
+
+	 	return u1;
+	 }
 }
 
 int create_user(char *un, char *pw) {
-	// isOpenDB = ConnectDB();
-	// int balance = 1000;
-	// std::stringstream strm;
-	// strm << "insert into users(username,password,balance) values(" << un << ",'"
-	// 		<< pw << "'," << balance << ")";
+	 isOpenDB = ConnectDB();
+	 int balance = 1000;
+	 std::stringstream strm;
+	 strm << "insert into users(username,password,balance) values(" << un << ",'"
+	 		<< pw << "'," << balance << ")";
 
-	// string s = strm.str();
-	// char *str = &s[0];
+	 string s = strm.str();
+	 char *str = &s[0];
 
-	// sqlite3_stmt *statement;
-	// int result;
-	// char *query = str;
-	// {
-	// 	if (sqlite3_prepare(dbfile, query, -1, &statement, 0) == SQLITE_OK) {
-	// 		int res = sqlite3_step(statement);
-	// 		result = res;
-	// 		sqlite3_finalize(statement);
-	// 	}
-	// 	return result;
-	// }
+	 sqlite3_stmt *statement;
+	 int result;
+	 char *query = str;
+	 {
+	 	if (sqlite3_prepare(dbfile, query, -1, &statement, 0) == SQLITE_OK) {
+	 		int res = sqlite3_step(statement);
+	 		result = res;
+	 		sqlite3_finalize(statement);
+	 	}
+	 	return result;
+	 }
 
 	return 0;
 }
 
 bool ConnectDB() {
-	// if (sqlite3_open(DB, &dbfile) == SQLITE_OK) {
-	// 	isOpenDB = true;
-	// 	cout << "connection done";
-	// 	return true;
-	// }
+	 if (sqlite3_open(DB, &dbfile) == SQLITE_OK) {
+	 	isOpenDB = true;
+	 	cout << "connection done";
+	 	return true;
+	 }
 
 	return false;
 }
 
 void DisonnectDB() {
-	// if (isOpenDB == true) {
-	// 	sqlite3_close(dbfile);
-	// }
+	 if (isOpenDB == true) {
+	 	sqlite3_close(dbfile);
+	 }
 }
 /*
 

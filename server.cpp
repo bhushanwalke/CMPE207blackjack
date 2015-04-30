@@ -31,13 +31,14 @@ static char buffer[BUFSIZE + 1]; /* static so zero filled */
 using namespace std;
 
 static int callback(void *data, int argc, char **argv, char **azColName);
-int login_auth(char *un, char *pw);
-void join_table(int);
+
 #define DB "database.db"
 
 bool isOpenDB = false;
 sqlite3 *dbfile;
 
+int login_auth(char *un, char *pw);
+void join_table(int);
 int create_user(char *un, char *pw);
 bool ConnectDB();
 void DisonnectDB();
@@ -277,7 +278,7 @@ int evaluate_hand(int user_id){
 
 
 void hit(int user_id){
-
+	//Just get_card is called from js
 }
 
 void stand(int user_id) {
@@ -289,7 +290,6 @@ void leave_table() {
 }
 
 int main(int argc, char **argv) {
-//pid_t pid;
 	srand(time(NULL));
 	shuffleNewDeck();
 	int pnum = 1, status;
@@ -358,7 +358,11 @@ void handle_request(int socketfd) {
 		pthread_mutex_lock(&mymutex);
 		bad_requests += 1;
 		pthread_mutex_unlock(&mymutex);
-		exit(0);
+		// exit(0);
+		write(socketfd,
+					"HTTP/1.1 404 Not Found\nContent-Length: 185\nConnection: close\nContent-Type: text/html\n\n<html><head>\n<title>404 Not Found</title>\n</head><body>\n<h1>Forbidden</h1>\nThe requested URL, file type or operation is not allowed on this simple static file webserver.\n</body></html>\n",
+					280);
+		send_and_close_socket(socketfd, buffer);
 	}
 
 	//printf("New thread called");

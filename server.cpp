@@ -38,14 +38,13 @@ bool isOpenDB = false;
 sqlite3 *dbfile;
 
 int login_auth(char *un, char *pw);
-void join_table(int);
 int create_user(char *un, char *pw);
 bool ConnectDB();
 void DisonnectDB();
 void send_and_close_socket(int, char *);
 void shuffle_array(int *, int *);
 int evaluate_hand(int);
-
+void assign_table(int);
 struct deck{
 	int card_img_no[52];
 	int card_value[52];
@@ -165,9 +164,39 @@ int* search_available_tables() {
 
 }
 
-void join_table(int table_no) {
+void assign_table(user* u1) {
 //search if already playing on any other table
 // look if the requested table is free and add
+
+	user* u1;
+	u1->id = user_id;
+	u1->balance = 1000;
+	u1->no_of_cards = 0;
+
+	table* current = tables;  
+	if(current == NULL){
+		current = new table;
+		current->next = NULL;
+	}
+	while(current->no_of_users > 5){
+		if(current->next != NULL)
+			current = current->next;
+		else{
+			current->next = new table;
+			current = current->next;
+			current->next = NULL;
+			current->no_of_users = 0;
+			break;
+		}
+	}
+
+
+	current->no_of_users++;
+	current->users.push(u1);
+			
+
+
+
 }
 
 void create_table() {
@@ -224,16 +253,35 @@ int* get_card(int user_id){
 
 	int arr[2];
 	/*user* user_ptr = search_or_create_user(user_id);
-	*/int card_num = u1.no_of_cards;//user_ptr->no_of_cards;
+	*/
+	table* current_table = tables;
+	int user_index = -1;
+	user* current_user;
+	while(current_table != NULL && user_index == -1){
+		for(int i=0; i < current_table->users.size() > 0 ; i++){
+
+			if(current_table->users[i].id == user_id){
+				user_index = i;
+				current_user = current_table->users[i];
+				break;
+			}
+		}
+		current_table = current_table->next;
+	}
+
+	cout << "Current_user_id = " << current_user->id;
+
+
+	int card_num = current_user.no_of_cards;//user_ptr->no_of_cards;
 	int next_card = d1.card_img_no[d1.index];
 
-	u1.cards[card_num] = d1.card_value[d1.index];
+	current_user.cards[card_num] = d1.card_value[d1.index];
 
 	d1.index--;
 
 	arr[0] = card_num;
 	arr[1] = next_card;
-	u1.no_of_cards++;	
+	current_user.no_of_cards++;	
 	
 	/*
 	int next_card = d1.card_value[d1.index];
@@ -465,7 +513,8 @@ void handle_request(int socketfd) {
 		cout << "\nUsername = " << username;
 		cout << "\nPassword = " << password;
 		int res = login_auth(username, password);
-		if(res == 1){
+		if(res > 0){
+			assign_table(res);
 			(void) strcpy(buffer, "GET /httpd/game.html");
 		}
 	}
@@ -699,7 +748,7 @@ void send_and_close_socket(int socketfd, char *buffer){
 }
 
 int login_auth(char *un, char *pw) {
-	return 0;
+	return 1;
 	// string s;
 	// vector<string> data;
 	// isOpenDB = ConnectDB();

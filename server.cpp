@@ -50,6 +50,8 @@ struct deck{
 	int card_img_no[52];
 	int card_value[52];
 	int index;
+	int cards[13];
+	int no_of_cards;
 };
 
 deck d1;
@@ -276,6 +278,34 @@ int evaluate_hand(int user_id){
 		return value;
 }
 
+int evaluate_dealer_hand(int table_id){
+		int value = 0;
+		int num_aces = 0;
+		int no_of_cards = d1.no_of_cards;
+		int *user_cards = d1.cards;
+		for(int i = 0; i < no_of_cards; i++)
+		{	
+			//console.log(cardList[i].value);
+			cout << "\n" << user_cards[i];
+			if( user_cards[i] >= 10 && user_cards[i] <= 13)
+				value = value + 10;
+			else if(user_cards[i] == 14)
+			{
+				value = value + 11;
+				num_aces++;
+			}
+			else
+				value = value + user_cards[i];
+		}
+		
+		while ( value > 21 && num_aces > 0)
+		{
+			value = value - 10;
+			num_aces--;
+		}
+		cout << "\n Value = "<<value;
+		return value;
+}
 
 void hit(int user_id){
 	//Just get_card is called from js

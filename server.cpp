@@ -414,7 +414,7 @@ void handle_request(int socketfd) {
 		cout << "\nPassword = " << password;
 		int res = login_auth(username, password);
 		if(res == 1){
-			(void) strcpy(buffer, "GET /httpd/home.html");
+			(void) strcpy(buffer, "GET /httpd/game.html");
 		}
 	}
 	else if (strncmp(&buffer[0], "GET /join-table\0", 9) == 0

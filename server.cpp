@@ -13,6 +13,9 @@
 #include <sys/stat.h>
 #include <pthread.h>
 #include <string>
+#include <sstream>
+#include <vector>
+#include <sqlite3.h>
 #include <time.h> 
 #define VERSION 23
 #define BUFSIZE 8096
@@ -27,11 +30,21 @@ static char buffer[BUFSIZE + 1]; /* static so zero filled */
 
 using namespace std;
 
-
+static int callback(void *data, int argc, char **argv, char **azColName);
+int login_auth(char *un, char *pw);
 void join_table(int);
+#define DB "database.db"
+
+bool isOpenDB = false;
+sqlite3 *dbfile;
+
+int create_user(char *un, char *pw);
+bool ConnectDB();
+void DisonnectDB();
 void send_and_close_socket(int, char *);
 void shuffle_array(int *, int *);
 int evaluate_hand(int);
+
 struct deck{
 	int card_img_no[52];
 	int card_value[52];
@@ -54,7 +67,8 @@ user u1;
 struct table {
 	int id;
 	int no_of_users;
-	user * users;
+	//user * users;
+	vector<user> users;
 	table * next;
 	int cards[13];
 	int no_of_cards;
@@ -89,8 +103,8 @@ struct config get_config(char *filename) {
 			} else if (i == 1) {
 				memcpy(configstruct.getcmd, cfline, strlen(cfline));
 				//printf("%s",configstruct.ccserver);
-	}
-		//		else if (i == 2) {
+			}
+			//		else if (i == 2) {
 //				memcpy(configstruct.path, cfline, strlen(cfline));
 //			}
 
@@ -114,17 +128,16 @@ static long total_filesize;
 void handle_request(int socketfd);
 void system_details();
 
-
-void init_casino(){
+void init_casino() {
 	table * temp, *current = NULL;
-	for(int i=0; i<3 ; i++){
-	
+	for (int i = 0; i < 3; i++) {
+
 		temp = new table;
-		if(tables == NULL){
+		if (tables == NULL) {
 			tables = temp;
 			tables->next = NULL;
 			current = tables;
-		}else{
+		} else {
 			temp->next = NULL;
 			current->next = temp;
 			current = temp;
@@ -136,25 +149,25 @@ void init_casino(){
 }
 
 //load all users(struct user link list) and their info from text file
-void load_user_data(){
+void load_user_data() {
 
 }
 
 //search for this id. Return pointer to that node if present otherwise create new node
-user* search_or_create_user(int user_id){
+user* search_or_create_user(int user_id) {
 
 }
 //search for available tables and return their ids in an array
-int* search_available_tables(){
+int* search_available_tables() {
 
 }
 
-void join_table(int table_no){
+void join_table(int table_no) {
 //search if already playing on any other table
 // look if the requested table is free and add
 }
 
-void create_table(){
+void create_table() {
 
 }
 
@@ -267,11 +280,11 @@ void hit(int user_id){
 	//Just get_card is called from js
 }
 
-void stand(int user_id){
+void stand(int user_id) {
 
 }
 
-void leave_table(){
+void leave_table() {
 
 }
 
@@ -312,8 +325,6 @@ int main(int argc, char **argv) {
 		exit(0);
 	}
 	cout << "\n              Server is Listening" << endl;
-//	if (pthread_create(&threads[0], NULL, (void * (*)(void *))system_details, NULL) < 0)
-//	printf("Could not call system datils function");
 
 	for (i = 1;; i++) {
 		length = sizeof(cli_addr);
@@ -339,7 +350,6 @@ void handle_request(int socketfd) {
 	char * fstr;
 	char * file_folder;
 	char folder_path[100];
-	
 
 	ret = read(socketfd, buffer, BUFSIZE); /* read Web request in one go */
 	if (ret == 0 || ret == -1) { /* read failure stop now */
@@ -375,15 +385,54 @@ void handle_request(int socketfd) {
 		}
 	}
 
+	/*
+	 create various parser for different requests
+	 if (strncmp(&buffer[0], "GET /join-table\0", 9) == 0 || strncmp(&buffer[0], "get /join_table\0", 9) == 0 ){
 
-/*
-create various parser for different requests
-	if (strncmp(&buffer[0], "GET /join-table\0", 9) == 0 || strncmp(&buffer[0], "get /join_table\0", 9) == 0 ){
+	 send_and_close_socket(socketfd);
+	 }
+	 */
 
-		send_and_close_socket(socketfd);
+	/* Check Login Details */
+	if (strncmp(&buffer[0], "GET /login_auth\0", 9) == 0
+			|| strncmp(&buffer[0], "get /login_auth\0", 9) == 0) {
+		char *result = strtok(buffer, "?=&");
+		/*		result = strtok(NULL, "?=");
+		 result = strtok(NULL, "&=");*/
+		char *username;	// = result;
+		char *password;
+
+		while (result) {
+
+			if (strcmp(result, "un") == 0) {
+				username = strtok(NULL, "?=&");
+			} else if (strcmp(result, "pw") == 0) {
+				password = strtok(NULL, "?=&");
+
+			}
+			result = strtok(NULL, "?=&");
+		}
+
+		cout << "\nUsername = " << username;
+		cout << "\nPassword = " << password;
+		int res = login_auth(username, password);
+		if(res == 1){
+			(void) strcpy(buffer, "GET /httpd/home.html");
+		}
 	}
-	*/
-	if (strncmp(&buffer[0], "GET /evaluate-hand\0", 12) == 0 || strncmp(&buffer[0], "get /evaluate-hand\0", 9) == 0 ){
+	else if (strncmp(&buffer[0], "GET /join-table\0", 9) == 0
+			|| strncmp(&buffer[0], "get /join_table\0", 9) == 0) {
+		pthread_mutex_lock(&mymutex);
+		good_requests += 1;
+		pthread_mutex_unlock(&mymutex);
+
+		(void) sprintf(buffer,
+				"HTTP/1.1 200 OK\nServer: 207httpd/%d.0\nContent-Length: %ld\nConnection: close\nContent-Type: %s\n\n{\"player_score\":%d}  \n",
+				VERSION, 20, "text/html", 6); /* Header + a blank line */
+		
+		send_and_close_socket(socketfd,buffer);
+	} 
+	else if (strncmp(&buffer[0], "GET /evaluate-hand\0", 12) == 0 || strncmp(&buffer[0], "get /evaluate-hand\0", 9) == 0 ){
 
 
 		//(void) strcpy(buffer, "GET /httpd/game.html");
@@ -461,9 +510,9 @@ create various parser for different requests
 		good_requests += 1;
 		pthread_mutex_unlock(&mymutex);
 	}
+
 	buflen = strlen(buffer);
 	fstr = (char *) 0;
-
 
 	string extension = "html";
 
@@ -482,17 +531,6 @@ create various parser for different requests
 		file_folder_len = strlen(file_folder);
 		//break;
 	}
-	cout << "\n";
-	for (i = 0; i < 25; i++) {
-
-		//printf("%c", folder_path[i]);
-	}
-
-	cout << "\n";
-	for (i = 0; i < 25; i++) {
-
-		//printf("%c", buffer[i]);
-	}
 	extension = "gif";
 	len = strlen(extension.c_str());
 	if (!strncmp(&buffer[buflen - len], extension.c_str(), len)) {
@@ -508,19 +546,19 @@ create various parser for different requests
 		file_folder = "httpd/";
 		file_folder_len = strlen(file_folder);
 	}
-	
+
 	if (file_folder_len != 0) {
 		for (i = 0; i < file_folder_len; i++) {
 			folder_path[i] = file_folder[i];
 		}
-		
+
 		int k = 0;
-		
+
 		for (int j = file_folder_len, k = 5; j < file_folder_len + buflen - 5;
 				j++, k++) {
 
 			folder_path[j] = buffer[k];
-		
+
 		}
 		cout << "\n";
 
@@ -565,7 +603,6 @@ create various parser for different requests
 			"HTTP/1.1 200 OK\nServer: 207httpd/%d.0\nContent-Length: %ld\nConnection: close\nContent-Type: %s\n\n",
 			VERSION, len, fstr); /* Header + a blank line */
 
-
 	(void) write(socketfd, buffer, strlen(buffer));
 
 	/* send file in 8KB block - last block may be smaller */
@@ -581,7 +618,6 @@ create various parser for different requests
 
 void send_and_close_socket(int socketfd, char *buffer){
 
-
 	(void) write(socketfd, buffer, strlen(buffer));
 
 	sleep(1); /* allow socket to drain before signalling the socket is closed */
@@ -589,15 +625,143 @@ void send_and_close_socket(int socketfd, char *buffer){
 	pthread_exit(NULL);
 }
 
-void system_details() {
-	while (1) {
-		sleep(10);
-		cout << "\n======================================================\n";
-		cout << "Number of successful Requests:" << good_requests << endl;
-		cout << "Number of Un-successful Requests:" << bad_requests << endl;
-		cout << "Tolal size of the file accessed:" << total_filesize << endl;
+int login_auth(char *un, char *pw) {
 
-		fflush(stdout);
+	string s;
+	vector<string> data;
+	isOpenDB = ConnectDB();
+	char buff[1024];
+	sqlite3_stmt *statement;
+	sprintf(buff,
+			"SELECT id, balance from users where username = '%s' and password = '%s';",
+			un, pw);
+	cout << "\n query:" << buff;
+	char *query = buff;
+
+	if (sqlite3_prepare(dbfile, query, -1, &statement, 0) == SQLITE_OK) {
+		int ctotal = sqlite3_column_count(statement);
+		int res = 0;
+
+		while (1)
+
+		{
+			res = sqlite3_step(statement);
+
+			if (res == SQLITE_ROW) {
+				for (int i = 0; i < ctotal; i++) {
+					data.push_back((char*) sqlite3_column_text(statement, i));
+				}
+
+				cout << endl;
+			}
+
+			if (res == SQLITE_DONE) {
+				//cout << "\nSize:" << data.size();
+				for (size_t n = 0; n < data.size(); n++) {
+					cout << "\ndata:" << data[n] << " ";
+					cout << endl;
+				}
+
+				if (data.size() == 0) {
+					cout << "\nInvalid User Details, creating new user";
+					//create_user(un, pw);
+					return 0;
+				}
+				break;
+			}
+
+		}
+
+		return 1;
 	}
 }
 
+int create_user(char *un, char *pw) {
+	isOpenDB = ConnectDB();
+	int balance = 1000;
+	std::stringstream strm;
+	strm << "insert into users(username,password,balance) values(" << un << ",'"
+			<< pw << "'," << balance << ")";
+
+	string s = strm.str();
+	char *str = &s[0];
+
+	sqlite3_stmt *statement;
+	int result;
+	char *query = str;
+	{
+		if (sqlite3_prepare(dbfile, query, -1, &statement, 0) == SQLITE_OK) {
+			int res = sqlite3_step(statement);
+			result = res;
+			sqlite3_finalize(statement);
+		}
+		return result;
+	}
+
+	return 0;
+}
+
+bool ConnectDB() {
+	if (sqlite3_open(DB, &dbfile) == SQLITE_OK) {
+		isOpenDB = true;
+		cout << "connection done";
+		return true;
+	}
+
+	return false;
+}
+
+void DisonnectDB() {
+	if (isOpenDB == true) {
+		sqlite3_close(dbfile);
+	}
+}
+/*
+
+ int login_auth(char *un, char *pw){
+
+ sqlite3 *db;
+ char *zErrMsg = 0;
+ int rc;
+ char *sql;
+ char buff[1024];
+ const char* data = "Callback function called";
+
+ Open database
+ rc = sqlite3_open("database.db", &db);
+ if( rc ){
+ fprintf(stderr, "Can't open database: %s\n", sqlite3_errmsg(db));
+ exit(0);
+ }else{
+ cout << "\nasdfasd";
+ fprintf(stderr, "Opened database successfully\n");
+ Create SQL statement
+ sprintf(buff, "SELECT id, balance from users where username = '%s' and password = '%s';", un, pw);
+
+ Execute SQL statement
+ rc = sqlite3_exec(db, buff, callback, (void*)data, &zErrMsg);
+
+ if( rc != SQLITE_OK ){
+ fprintf(stderr, "SQL error: %s\n", zErrMsg);
+ sqlite3_free(zErrMsg);
+ }else{
+
+ fprintf(stdout, "Operation done successfully\n");
+
+ }
+ sqlite3_close(db);
+ return 0;
+
+ }
+ }
+
+ static int callback(void *data, int argc, char **argv, char **azColName){
+ int i;
+ fprintf(stderr, "%s: ", (const char*)data);
+ for(i=0; i<argc; i++){
+ printf("%s = %s\n", azColName[i], argv[i] ? argv[i] : "NULL");
+ }
+ printf("\n");
+ return 0;
+ }
+ */

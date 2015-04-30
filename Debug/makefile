@@ -43,7 +43,7 @@ all: http_server
 http_server: $(OBJS) $(USER_OBJS)
 	@echo 'Building target: $@'
 	@echo 'Invoking: GCC C++ Linker'
-	g++ -pthread -o "http_server" $(OBJS) $(USER_OBJS) $(LIBS)
+	g++ -pthread -lsqlite3 -o "http_server" $(OBJS) $(USER_OBJS) $(LIBS)
 	@echo 'Finished building target: $@'
 	@echo ' '
 

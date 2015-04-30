@@ -30,14 +30,21 @@ static char buffer[BUFSIZE + 1]; /* static so zero filled */
 
 using namespace std;
 
-
+struct user {
+	string name;
+	int id;
+	float balance;
+	int cards[13];
+	int no_of_cards;
+	user * next;
+};
 
 #define DB "database.db"
 
 bool isOpenDB = false;
 sqlite3 *dbfile;
 
-user * login_auth(char *un, char *pw);
+user* login_auth(char *un, char *pw);
 void join_table(int);
 int create_user(char *un, char *pw);
 bool ConnectDB();
@@ -56,14 +63,7 @@ struct deck{
 
 deck d1;
 /* User structure */
-struct user {
-	string name;
-	int id;
-	float balance;
-	int cards[13];
-	int no_of_cards;
-	user * next;
-};
+
 
 user u1;
 /* Structure for saving tables */
@@ -169,10 +169,6 @@ void assign_table(user* u1) {
 //search if already playing on any other table
 // look if the requested table is free and add
 
-	user* u1;
-	u1->id = user_id;
-	u1->balance = 1000;
-	u1->no_of_cards = 0;
 
 	table* current = tables;  
 	if(current == NULL){
@@ -193,7 +189,7 @@ void assign_table(user* u1) {
 
 
 	current->no_of_users++;
-	current->users.push(u1);
+	current->users.push_back(*u1);
 			
 
 
@@ -263,7 +259,7 @@ int* get_card(int user_id){
 
 			if(current_table->users[i].id == user_id){
 				user_index = i;
-				current_user = current_table->users[i];
+				current_user = &(current_table->users[i]);
 				break;
 			}
 		}
@@ -273,16 +269,16 @@ int* get_card(int user_id){
 	cout << "Current_user_id = " << current_user->id;
 
 
-	int card_num = current_user.no_of_cards;//user_ptr->no_of_cards;
+	int card_num = current_user->no_of_cards;//user_ptr->no_of_cards;
 	int next_card = d1.card_img_no[d1.index];
 
-	current_user.cards[card_num] = d1.card_value[d1.index];
+	current_user->cards[card_num] = d1.card_value[d1.index];
 
 	d1.index--;
 
 	arr[0] = card_num;
 	arr[1] = next_card;
-	current_user.no_of_cards++;	
+	current_user->no_of_cards++;	
 	
 	/*
 	int next_card = d1.card_value[d1.index];
@@ -515,7 +511,7 @@ void handle_request(int socketfd) {
 		cout << "\nPassword = " << password;
 		user * res = login_auth(username, password);
 
-		if(res == 1){
+		if(res->id > 0){
 			assign_table(res);
 			(void) strcpy(buffer, "GET /httpd/game.html");
 		}
@@ -749,9 +745,10 @@ void send_and_close_socket(int socketfd, char *buffer){
 	pthread_exit(NULL);
 }
 
-user * login_auth(char *un, char *pw) {
+user* login_auth(char *un, char *pw) {
 
 	 string s;
+	 user *u1;
 	 vector<string> data;
 	 isOpenDB = ConnectDB();
 	 char buff[1024];
@@ -787,7 +784,7 @@ user * login_auth(char *un, char *pw) {
 	 			}
 
 
-	 		user *u1;
+	 		
 	 		u1->id = data[0];
 	 		u1->balance = data[1];
 	 		u1->name = un;

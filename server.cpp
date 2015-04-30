@@ -13,6 +13,7 @@
 #include <sys/stat.h>
 #include <pthread.h>
 #include <string>
+#include <time.h> 
 #define VERSION 23
 #define BUFSIZE 8096
 #define ERROR      42
@@ -28,22 +29,35 @@ using namespace std;
 
 
 void join_table(int);
-void send_and_close_socket(int);
+void send_and_close_socket(int, char *);
+void shuffle_array(int *, int *);
+int evaluate_hand(int);
+struct deck{
+	int card_img_no[52];
+	int card_value[52];
+	int index;
+};
 
+deck d1;
 /* User structure */
 struct user {
 	string name;
 	int id;
 	float balance;
+	int cards[13];
+	int no_of_cards;
 	user * next;
 };
 
+user u1;
 /* Structure for saving tables */
 struct table {
 	int id;
 	int no_of_users;
 	user * users;
 	table * next;
+	int cards[13];
+	int no_of_cards;
 };
 
 table * tables;
@@ -117,6 +131,8 @@ void init_casino(){
 		}
 
 	}
+	
+	
 }
 
 //load all users(struct user link list) and their info from text file
@@ -142,6 +158,111 @@ void create_table(){
 
 }
 
+void shuffleNewDeck(){
+	cout << "\n ShufflingNewDeck............";
+	string downCardFile = "images/b2fv.png";
+
+	int value = 14;
+	int j = 0;
+	for (int i = 1; i <= 52; ++i)
+	{
+		d1.card_img_no[i]= i;
+		d1.card_value[i] = value;
+		j++;
+		j = j % 4;
+		if ( j == 0) 
+			value--;
+	}	
+	d1.index = 51;
+	//initialize test user -- to be removed
+	cout << "\nInitializing user...........";
+	u1.name = "Varun";
+	u1.id = 1;
+	u1.balance = 1000;
+	u1.no_of_cards = 0;	
+
+	shuffle_array( (d1.card_value), (d1.card_img_no));
+}
+
+void shuffle_array(int *card_value, int *card_img_no) {
+	int tmp, current, top = 52;
+	
+	if(top) 
+		while(--top) {
+		
+		current = rand()%52;
+		tmp = card_value[current];
+		card_value[current] = card_value[top];
+		card_value[top] = tmp;
+
+		tmp = card_img_no[current];
+		card_img_no[current] = card_img_no[top];
+		card_img_no[top] = tmp;
+			
+	}
+}
+
+int* get_card(int user_id){
+
+	int arr[2];
+	/*user* user_ptr = search_or_create_user(user_id);
+	*/int card_num = u1.no_of_cards;//user_ptr->no_of_cards;
+	int next_card = d1.card_img_no[d1.index];
+
+	u1.cards[card_num] = d1.card_value[d1.index];;
+
+	cout << d1.index;
+
+	d1.index--;
+
+	arr[0] = card_num;
+	arr[1] = next_card;
+	u1.no_of_cards++;	
+	cout << "Next Card " << next_card;	
+	/*
+	int next_card = d1.card_value[d1.index];
+	d1.index++;
+	user_ptr->cards[user_ptr->no_of_cards] = next_card;
+	user_ptr->no_of_cards++;
+	*/
+	return arr;
+	// $("#container").append("<img id=\"card" + cardNum + "\" src=\"\" />");
+	//    var left = 300 + (25 * cardNum); //72
+
+	// var wrappedCard = $("#card" + cardNum);		
+	//    wrappedCard.css({ 'position' : 'absolute', 'height' : '96', 'width': '72', 'left': left, 'top':50 });
+	// animateCardToLocation(wrappedCard, nextCard.file); 
+}
+int evaluate_hand(int user_id){
+		int value = 0;
+		int num_aces = 0;
+		int no_of_cards = u1.no_of_cards;
+		int *user_cards = u1.cards;
+		for(int i = 0; i < no_of_cards; i++)
+		{	
+			//console.log(cardList[i].value);
+			cout << "\n" << user_cards[i];
+			if( user_cards[i] >= 10 && user_cards[i] <= 13)
+				value = value + 10;
+			else if(user_cards[i] == 14)
+			{
+				value = value + 11;
+				num_aces++;
+			}
+			else
+				value = value + user_cards[i];
+		}
+		
+		while ( value > 21 && num_aces > 0)
+		{
+			value = value - 10;
+			num_aces--;
+		}
+		cout << "\n Value = "<<value;
+		return value;
+}
+
+
 void hit(int user_id){
 
 }
@@ -156,6 +277,8 @@ void leave_table(){
 
 int main(int argc, char **argv) {
 //pid_t pid;
+	srand(time(NULL));
+	shuffleNewDeck();
 	int pnum = 1, status;
 	pthread_t threads[100];
 	int i, port, pid, listenfd, socketfd, hit;
@@ -257,16 +380,83 @@ create various parser for different requests
 		send_and_close_socket(socketfd);
 	}
 	*/
-	if (strncmp(&buffer[0], "GET /join-table\0", 9) == 0 || strncmp(&buffer[0], "get /join_table\0", 9) == 0 ){
+	if (strncmp(&buffer[0], "GET /evaluate-hand\0", 12) == 0 || strncmp(&buffer[0], "get /evaluate-hand\0", 9) == 0 ){
 
-		send_and_close_socket(socketfd);
+
+		//(void) strcpy(buffer, "GET /httpd/game.html");
+		
+		pthread_mutex_lock(&mymutex);
+		good_requests += 1;
+		pthread_mutex_unlock(&mymutex);
+
+		int player_score = evaluate_hand(1);
+
+		(void) sprintf(buffer,
+				"HTTP/1.1 200 OK\nServer: 207httpd/%d.0\nContent-Length: %ld\nConnection: close\nContent-Type: %s\n\n{\"player_score\":%d}  \n",
+				VERSION, 20, "text/html", player_score); /* Header + a blank line */
+		send_and_close_socket(socketfd, buffer);
+	}
+	else if (strncmp(&buffer[0], "GET /get-card\0", 12) == 0 || strncmp(&buffer[0], "get /get-card\0", 9) == 0 ){
+
+
+		//(void) strcpy(buffer, "GET /httpd/game.html");
+		int user_id = (int)buffer[15] - 48;
+		cout<<"User Id:"<<user_id<<endl;
+
+		pthread_mutex_lock(&mymutex);
+		good_requests += 1;
+		pthread_mutex_unlock(&mymutex);
+
+		int* arr = get_card(user_id);
+
+		(void) sprintf(buffer,
+				"HTTP/1.1 200 OK\nServer: 207httpd/%d.0\nContent-Length: %ld\nConnection: close\nContent-Type: %s\n\n{\"card_no\":%d, \"next_card\":%d}  \n",
+				VERSION, 30, "text/html", arr[0], arr[1]); /* Header + a blank line */
+		send_and_close_socket(socketfd, buffer);
+	}
+	else if (strncmp(&buffer[0], "GET /shuffleNewDeck\0", 9) == 0 || strncmp(&buffer[0], "get /shuffleNewDeck\0", 9) == 0 ){
+
+
+		//(void) strcpy(buffer, "GET /httpd/game.html");
+
+		pthread_mutex_lock(&mymutex);
+		good_requests += 1;
+		pthread_mutex_unlock(&mymutex);
+
+		shuffleNewDeck();
+		(void) sprintf(buffer,
+				"HTTP/1.1 200 OK\nServer: 207httpd/%d.0\nContent-Length: %ld\nConnection: close\nContent-Type: %s\n\n{\"a\":1,\"b\":2}\n",
+				VERSION, 14, "text/html"); /* Header + a blank line */
+		send_and_close_socket(socketfd, buffer);
+	}
+	else if (strncmp(&buffer[0], "GET /game\0", 9) == 0 || strncmp(&buffer[0], "get /game\0", 9) == 0 ){
+
+		(void) strcpy(buffer, "GET /httpd/game.html");
+		pthread_mutex_lock(&mymutex);
+		good_requests += 1;
+		pthread_mutex_unlock(&mymutex);
+	}
+	else if (strncmp(&buffer[0], "GET /join-table\0", 9) == 0 || strncmp(&buffer[0], "get /join_table\0", 9) == 0 ){
+		pthread_mutex_lock(&mymutex);
+		good_requests += 1;
+		pthread_mutex_unlock(&mymutex);
+			//printf("Buffer %d", buffer[16]);
+		int tableNo = (int)buffer[16] - 48;
+		cout<<"Table No:"<<tableNo<<endl;
+
+		(void) sprintf(buffer,
+				"HTTP/1.1 200 OK\nServer: 207httpd/%d.0\nContent-Length: %ld\nConnection: close\nContent-Type: %s\n\n{\"a\":1,\"b\":2}\n",
+				VERSION, 14, "text/html"); /* Header + a blank line */
+
+
+		send_and_close_socket(socketfd, buffer);
 	}
 	else if (!strncmp(&buffer[0], "GET /\0", 6) || !strncmp(&buffer[0], "get /\0", 6)) /* convert no filename to index file */
 	{
-	(void) strcpy(buffer, "GET /httpd/index.html");
-	pthread_mutex_lock(&mymutex);
-	good_requests += 1;
-	pthread_mutex_unlock(&mymutex);
+		(void) strcpy(buffer, "GET /httpd/index.html");
+		pthread_mutex_lock(&mymutex);
+		good_requests += 1;
+		pthread_mutex_unlock(&mymutex);
 	}
 	buflen = strlen(buffer);
 	fstr = (char *) 0;
@@ -277,14 +467,13 @@ create various parser for different requests
 	len = strlen(extension.c_str());
 	if (!strncmp(&buffer[buflen - len], extension.c_str(), len)) {
 		fstr = "text/html";
-		//break;
 	}
 
 	int file_folder_len = 0;	// = strlen(file_folder);
 	extension = "jpg";
 	len = strlen(extension.c_str());
 	if (!strncmp(&buffer[buflen - len], extension.c_str(), len)) {
-		fstr = "/httpd/images/jpeg";
+		fstr = "image/jpeg";
 		file_folder = "httpd/images/";
 
 		file_folder_len = strlen(file_folder);
@@ -304,7 +493,7 @@ create various parser for different requests
 	extension = "gif";
 	len = strlen(extension.c_str());
 	if (!strncmp(&buffer[buflen - len], extension.c_str(), len)) {
-		fstr = "/httpd/images/gif";
+		fstr = "image/gif";
 		file_folder = "httpd/images/";
 		file_folder_len = strlen(file_folder);
 	}
@@ -312,8 +501,8 @@ create various parser for different requests
 	extension = "png";
 	len = strlen(extension.c_str());
 	if (!strncmp(&buffer[buflen - len], extension.c_str(), len)) {
-		fstr = "/httpd/images/png";
-		file_folder = "httpd/images/";
+		fstr = "image/png";
+		file_folder = "httpd/";
 		file_folder_len = strlen(file_folder);
 	}
 	
@@ -387,15 +576,7 @@ create various parser for different requests
 }
 
 
-void send_and_close_socket(int socketfd){
-
-	//printf("Buffer %d", buffer[16]);
-	int tableNo = (int)buffer[16] - 48;
-	cout<<"Table No:"<<tableNo<<endl;
-
-	(void) sprintf(buffer,
-				"HTTP/1.1 200 OK\nServer: 207httpd/%d.0\nContent-Length: %ld\nConnection: close\nContent-Type: %s\n\n{\"a\":1,\"b\":2}\n",
-				VERSION, 14, "text/html"); /* Header + a blank line */
+void send_and_close_socket(int socketfd, char *buffer){
 
 
 	(void) write(socketfd, buffer, strlen(buffer));

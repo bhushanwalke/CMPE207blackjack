@@ -50,6 +50,8 @@ struct deck{
 	int card_img_no[52];
 	int card_value[52];
 	int index;
+	int cards[13];
+	int no_of_cards;
 };
 
 deck d1;
@@ -188,12 +190,14 @@ void shuffleNewDeck(){
 			value--;
 	}	
 	d1.index = 51;
+	d1.no_of_cards = 0;
 	//initialize test user -- to be removed
-	cout << "\nInitializing user...........";
+	
 	u1.name = "Varun";
 	u1.id = 1;
 	u1.balance = 1000;
 	u1.no_of_cards = 0;	
+
 
 	shuffle_array( (d1.card_value), (d1.card_img_no));
 }
@@ -223,16 +227,14 @@ int* get_card(int user_id){
 	*/int card_num = u1.no_of_cards;//user_ptr->no_of_cards;
 	int next_card = d1.card_img_no[d1.index];
 
-	u1.cards[card_num] = d1.card_value[d1.index];;
-
-	cout << d1.index;
+	u1.cards[card_num] = d1.card_value[d1.index];
 
 	d1.index--;
 
 	arr[0] = card_num;
 	arr[1] = next_card;
 	u1.no_of_cards++;	
-	cout << "Next Card " << next_card;	
+	
 	/*
 	int next_card = d1.card_value[d1.index];
 	d1.index++;
@@ -247,6 +249,25 @@ int* get_card(int user_id){
 	//    wrappedCard.css({ 'position' : 'absolute', 'height' : '96', 'width': '72', 'left': left, 'top':50 });
 	// animateCardToLocation(wrappedCard, nextCard.file); 
 }
+
+int* get_dealer_card(int table_id){
+		int resp[2];
+		int card_num = d1.no_of_cards;
+		int next_card = d1.card_img_no[d1.index];
+
+		d1.cards[card_num] = d1.card_value[d1.index];
+		d1.index--;
+		d1.no_of_cards++;
+		resp[0] = card_num;
+		resp[1] = next_card;
+		return resp;
+		// $("#dealerContainer").append("<img id=\"dealer-card" + cardNum + "\" src=\"\" >");
+		// var left = 300 + (25 * cardNum);
+		// var wrappedCard = $("#dealer-card" + cardNum);
+		// wrappedCard.css( { 'position' : 'absolute', 'height' : '96', 'width': '72', 'left': left, 'top': 50});
+		// animateCardToLocation(wrappedCard, cardNum == 0 ? downCardFile : nextCard.file);
+	}
+
 int evaluate_hand(int user_id){
 		int value = 0;
 		int num_aces = 0;
@@ -255,7 +276,6 @@ int evaluate_hand(int user_id){
 		for(int i = 0; i < no_of_cards; i++)
 		{	
 			//console.log(cardList[i].value);
-			cout << "\n" << user_cards[i];
 			if( user_cards[i] >= 10 && user_cards[i] <= 13)
 				value = value + 10;
 			else if(user_cards[i] == 14)
@@ -272,10 +292,38 @@ int evaluate_hand(int user_id){
 			value = value - 10;
 			num_aces--;
 		}
-		cout << "\n Value = "<<value;
+		
 		return value;
 }
 
+int evaluate_dealer_hand(int table_id){
+		int value = 0;
+		int num_aces = 0;
+		int no_of_cards = d1.no_of_cards;
+		int *dealer_cards = d1.cards;
+		for(int i = 0; i <= no_of_cards; i++)
+		{	
+			//console.log(cardList[i].value);
+			
+			if( dealer_cards[i] >= 10 && dealer_cards[i] <= 13)
+				value = value + 10;
+			else if(dealer_cards[i] == 14)
+			{
+				value = value + 11;
+				num_aces++;
+			}
+			else
+				value = value + dealer_cards[i];
+		}
+		
+		while ( value > 21 && num_aces > 0)
+		{
+			value = value - 10;
+			num_aces--;
+		}
+		
+		return value;
+}
 
 void hit(int user_id){
 	//Just get_card is called from js
@@ -421,6 +469,18 @@ void handle_request(int socketfd) {
 			(void) strcpy(buffer, "GET /httpd/game.html");
 		}
 	}
+	else if (strncmp(&buffer[0], "GET /get-dealer-card\0", 18) == 0
+			|| strncmp(&buffer[0], "get /get-dealer-card\0", 18) == 0) {
+		pthread_mutex_lock(&mymutex);
+		good_requests += 1;
+		pthread_mutex_unlock(&mymutex);
+		int* resp = get_dealer_card(0); 
+		(void) sprintf(buffer,
+				"HTTP/1.1 200 OK\nServer: 207httpd/%d.0\nContent-Length: %ld\nConnection: close\nContent-Type: %s\n\n{\"card_no\":%d, \"next_card\":%d} \n",
+				VERSION, 30, "text/html", resp[0], resp[1]); /* Header + a blank line */
+		
+		send_and_close_socket(socketfd,buffer);
+	} 
 	else if (strncmp(&buffer[0], "GET /join-table\0", 9) == 0
 			|| strncmp(&buffer[0], "get /join_table\0", 9) == 0) {
 		pthread_mutex_lock(&mymutex);
@@ -432,8 +492,20 @@ void handle_request(int socketfd) {
 				VERSION, 20, "text/html", 6); /* Header + a blank line */
 		
 		send_and_close_socket(socketfd,buffer);
+	}
+	else if (strncmp(&buffer[0], "GET /evaluate-dealer-hand\0", 21) == 0 || strncmp(&buffer[0], "get /evaluate-dealer-hand\0", 21) == 0 ){
+		pthread_mutex_lock(&mymutex);
+		good_requests += 1;
+		pthread_mutex_unlock(&mymutex);
+
+		int dealer_score = evaluate_dealer_hand(1);
+
+		(void) sprintf(buffer,
+				"HTTP/1.1 200 OK\nServer: 207httpd/%d.0\nContent-Length: %ld\nConnection: close\nContent-Type: %s\n\n{\"dealer_score\":%d}  \n",
+				VERSION, 20, "text/html", dealer_score); /* Header + a blank line */
+		send_and_close_socket(socketfd, buffer);
 	} 
-	else if (strncmp(&buffer[0], "GET /evaluate-hand\0", 12) == 0 || strncmp(&buffer[0], "get /evaluate-hand\0", 9) == 0 ){
+	else if (strncmp(&buffer[0], "GET /evaluate-hand\0", 12) == 0 || strncmp(&buffer[0], "get /evaluate-hand\0", 12) == 0 ){
 
 
 		//(void) strcpy(buffer, "GET /httpd/game.html");
@@ -627,95 +699,95 @@ void send_and_close_socket(int socketfd, char *buffer){
 }
 
 int login_auth(char *un, char *pw) {
+	return 0;
+	// string s;
+	// vector<string> data;
+	// isOpenDB = ConnectDB();
+	// char buff[1024];
+	// sqlite3_stmt *statement;
+	// sprintf(buff,
+	// 		"SELECT id, balance from users where username = '%s' and password = '%s';",
+	// 		un, pw);
+	// cout << "\n query:" << buff;
+	// char *query = buff;
 
-	string s;
-	vector<string> data;
-	isOpenDB = ConnectDB();
-	char buff[1024];
-	sqlite3_stmt *statement;
-	sprintf(buff,
-			"SELECT id, balance from users where username = '%s' and password = '%s';",
-			un, pw);
-	cout << "\n query:" << buff;
-	char *query = buff;
+	// if (sqlite3_prepare(dbfile, query, -1, &statement, 0) == SQLITE_OK) {
+	// 	int ctotal = sqlite3_column_count(statement);
+	// 	int res = 0;
 
-	if (sqlite3_prepare(dbfile, query, -1, &statement, 0) == SQLITE_OK) {
-		int ctotal = sqlite3_column_count(statement);
-		int res = 0;
+	// 	while (1)
 
-		while (1)
+	// 	{
+	// 		res = sqlite3_step(statement);
 
-		{
-			res = sqlite3_step(statement);
+	// 		if (res == SQLITE_ROW) {
+	// 			for (int i = 0; i < ctotal; i++) {
+	// 				data.push_back((char*) sqlite3_column_text(statement, i));
+	// 			}
 
-			if (res == SQLITE_ROW) {
-				for (int i = 0; i < ctotal; i++) {
-					data.push_back((char*) sqlite3_column_text(statement, i));
-				}
+	// 			cout << endl;
+	// 		}
 
-				cout << endl;
-			}
+	// 		if (res == SQLITE_DONE) {
+	// 			//cout << "\nSize:" << data.size();
+	// 			for (size_t n = 0; n < data.size(); n++) {
+	// 				cout << "\ndata:" << data[n] << " ";
+	// 				cout << endl;
+	// 			}
 
-			if (res == SQLITE_DONE) {
-				//cout << "\nSize:" << data.size();
-				for (size_t n = 0; n < data.size(); n++) {
-					cout << "\ndata:" << data[n] << " ";
-					cout << endl;
-				}
+	// 			if (data.size() == 0) {
+	// 				cout << "\nInvalid User Details, creating new user";
+	// 				//create_user(un, pw);
+	// 				return 0;
+	// 			}
+	// 			break;
+	// 		}
 
-				if (data.size() == 0) {
-					cout << "\nInvalid User Details, creating new user";
-					//create_user(un, pw);
-					return 0;
-				}
-				break;
-			}
+	// 	}
 
-		}
-
-		return 1;
-	}
+	// 	return 1;
+	// }
 }
 
 int create_user(char *un, char *pw) {
-	isOpenDB = ConnectDB();
-	int balance = 1000;
-	std::stringstream strm;
-	strm << "insert into users(username,password,balance) values(" << un << ",'"
-			<< pw << "'," << balance << ")";
+	// isOpenDB = ConnectDB();
+	// int balance = 1000;
+	// std::stringstream strm;
+	// strm << "insert into users(username,password,balance) values(" << un << ",'"
+	// 		<< pw << "'," << balance << ")";
 
-	string s = strm.str();
-	char *str = &s[0];
+	// string s = strm.str();
+	// char *str = &s[0];
 
-	sqlite3_stmt *statement;
-	int result;
-	char *query = str;
-	{
-		if (sqlite3_prepare(dbfile, query, -1, &statement, 0) == SQLITE_OK) {
-			int res = sqlite3_step(statement);
-			result = res;
-			sqlite3_finalize(statement);
-		}
-		return result;
-	}
+	// sqlite3_stmt *statement;
+	// int result;
+	// char *query = str;
+	// {
+	// 	if (sqlite3_prepare(dbfile, query, -1, &statement, 0) == SQLITE_OK) {
+	// 		int res = sqlite3_step(statement);
+	// 		result = res;
+	// 		sqlite3_finalize(statement);
+	// 	}
+	// 	return result;
+	// }
 
 	return 0;
 }
 
 bool ConnectDB() {
-	if (sqlite3_open(DB, &dbfile) == SQLITE_OK) {
-		isOpenDB = true;
-		cout << "connection done";
-		return true;
-	}
+	// if (sqlite3_open(DB, &dbfile) == SQLITE_OK) {
+	// 	isOpenDB = true;
+	// 	cout << "connection done";
+	// 	return true;
+	// }
 
 	return false;
 }
 
 void DisonnectDB() {
-	if (isOpenDB == true) {
-		sqlite3_close(dbfile);
-	}
+	// if (isOpenDB == true) {
+	// 	sqlite3_close(dbfile);
+	// }
 }
 /*
 

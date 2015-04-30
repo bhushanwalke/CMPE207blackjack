@@ -2,7 +2,7 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
  <html>                                                                  
  <head>                                         
-<title> nothing </title> 
+<title> Blackjack </title> 
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script> 
  <!--script type="text/javascript" src="jquery-1.5.js"></script>          
  <script type="text/javascript" src="jquery-ui.js"> </script>
@@ -105,7 +105,28 @@ Player Chips:
 		}
 		return array;
 	}
-	
+	evaluateDealerHand = function(cardList) {
+
+		var value;
+		$.ajax({
+	        	url: "http://127.0.0.1:8082/evaluate-dealer-hand/", 
+	        	success: function(result){
+	        		obj = JSON.parse(result);
+	        		console.log(obj);
+	        		value = obj.dealer_score;
+	        		//$("#player-score-value").html(value);
+	        		
+	        	},
+	        	error: function(result){
+	        		
+	        		console.log("Error");	
+	        		
+	        	},
+	        	async: false
+	    });
+		
+		return value;
+	}
 	evaluateHand = function(cardList) {
 
 		var value;
@@ -242,7 +263,7 @@ Player Chips:
 	drawCards = function(cards, prefix) {
 		console.log(cards);
 		for (i = 0; i < cards.length; i++) {
-			$("#" + prefix + i).attr("src", cards[i].file);
+			$("#" + prefix + i).attr("src", "images/"+cards[i]+".png");
 			$("#" + prefix + i).show();
 		}
 	}
@@ -297,14 +318,35 @@ Player Chips:
 	}
 	
 	getDealerCard = function() {
-		var cardNum = dealerCards.length;
-		var nextCard = cards.pop();
-		dealerCards[cardNum] = nextCard;
-		$("#dealerContainer").append("<img id=\"dealer-card" + cardNum + "\" src=\"\" >");
-		var left = 300 + (25 * cardNum);
-		var wrappedCard = $("#dealer-card" + cardNum);
-		wrappedCard.css( { 'position' : 'absolute', 'height' : '96', 'width': '72', 'left': left, 'top': 50});
-		animateCardToLocation(wrappedCard, cardNum == 0 ? downCardFile : nextCard.file);
+		var cardNum, nextCard;
+		$.ajax({
+	        	url: "http://127.0.0.1:8082/get-dealer-card/", 
+	        	success: function(result){
+	        		obj = JSON.parse(result);
+	        		console.log("GetDealerCard");
+	        		console.log(obj);
+	        		cardNum = obj.card_no;
+	        		nextCard = obj.next_card;
+
+					dealerCards[cardNum] = nextCard;
+					console.log(nextCard);
+					$("#dealerContainer").append("<img id=\"dealer-card" + cardNum + "\" src=\"\" >");
+					var left = 300 + (25 * cardNum);
+					var wrappedCard = $("#dealer-card" + cardNum);
+					wrappedCard.css( { 'position' : 'absolute', 'height' : '96', 'width': '72', 'left': left, 'top': 50});
+					animateCardToLocation(wrappedCard, cardNum == 0 ? downCardFile : "images/" + nextCard + ".png");
+	        	},
+	        	error: function(result){
+	        		
+	        		console.log("Error");	
+	        		
+	        	},
+	        	async: false
+	    });
+
+		// var cardNum = dealerCards.length;
+		// var nextCard = cards.pop();
+		
 	}
 	
 	animateCardToLocation = function (wrappedCard, file) {
@@ -317,7 +359,7 @@ Player Chips:
 							top: wrappedCard.offset().top,
 							left: wrappedCard.offset().left
 						},
-						5
+						500
 						)
 						.queue ( function() {
 							wrappedCard.attr("src", file);
@@ -362,12 +404,13 @@ Player Chips:
 		
 		nextDealerInterval = function () {
 			console.log("nextDealerInterval");
-			dealerScore = evaluateHand(dealerCards);
+			dealerScore = evaluateDealerHand(dealerCards);
+			console.log("Dealer score = " + dealerScore);
 			if ( dealerScore < 17 ) {
 				dealerSize = dealerCards.length;
 				getDealerCard();
 				drawCards(dealerCards, "dealer-card");
-				setTimeout(nextDealerInterval, 10);
+				setTimeout(nextDealerInterval, 1);
 			} 
 			else {
 				playerScore = evaluateHand(player1.cards);
@@ -392,7 +435,7 @@ Player Chips:
 		
 		$('#stand').bind('click', function() {
 			drawCards(dealerCards, "dealer-card");
-			setTimeout(nextDealerInterval, 200);
+			setTimeout(nextDealerInterval, 2);
 			return true;
 		});
 		

@@ -48,6 +48,8 @@
  
  </head>                                                                  
  <body>      
+ <center><b><font size = "6" color = "gold">BLACKJACK</font></b></center>
+<h3><font color = "yellow">Dealer</font></h3> 
  <div id ="outerContainer">
  <div id="deckContainer">
 <!--	<img id="deck-image" src="images/b2fv.png" width="71" height="96"/>-->
@@ -55,8 +57,9 @@
  </div>
  <div id="dealerContainer">
  </div>
-<div id="container" style="position: relative; left: 0px; height:250px; width:100%">
+<div id="container" style="position: relative; left: 0px; height:100px; width:100%">
  </div>
+ <h3><font color = "yellow">Player</font></h3>
 <div class="start-game-area">
 	<button id="deal">Deal</button>
 	<button id="hit">Hit</button>
@@ -66,34 +69,34 @@
 	<button id="animate">Animate</button>
 </div>
 <div id="player-score">
-Player Score:  
-<div id="player-score-value"> </div>
+<b><font size = "4" color = "white">Player Score:
+<div id="player-score-value"> </div></font></b> 
 </div>
 <div id="player-chips">
-Player Chips:
-   <div id="player-chips-value">
-   </div>
+<b><font size = "4"  color = "white">Player Chips:
+   <div id="player-chips-value" ></div></font></b>
+   
 </div>
 </div>
  </body>                                                                 
  </html>
 
  <script>
- $(document).ready(function(){
-	$("deal").click(function(){
-	        $.ajax({
-	        	url: "http://localhost:2290/create_table", 
-	        	success: function(result){
-	            	$("#player-score").html(result);
-	        	},
-	        	error: function(result){
-	        		$("#player-score").html("result updated w/ error" + result);	
-	        		console.log(result);	
-	        	}
-	    });
-	    });
-});
-</script>
+//  $(document).ready(function(){
+// 	$("deal").click(function(){
+// 	        $.ajax({
+// 	        	url: "http://localhost:2290/create_table", 
+// 	        	success: function(result){
+// 	            	$("#player-score").html(result);
+// 	        	},
+// 	        	error: function(result){
+// 	        		$("#player-score").html("result updated w/ error" + result);	
+// 	        		console.log(result);	
+// 	        	}
+// 	    });
+// 	    });
+// });
+// </script>
 
 
 <!-- Blackjack.js -->
@@ -140,7 +143,7 @@ Player Chips:
 
 		var value;
 		$.ajax({
-	        	url: "http://127.0.0.1:8082/evaluate-hand/", 
+	        	url: "http://127.0.0.1:8082/evaluate-hand/"+user_id, 
 	        	success: function(result){
 	        		obj = JSON.parse(result);
 	        		console.log(obj);
@@ -296,7 +299,7 @@ Player Chips:
 		var cardNum;
 		var	nextCard;
 		$.ajax({
-	        	url: "http://127.0.0.1:8082/get-card/1", 
+	        	url: "http://127.0.0.1:8082/get-card/"+user_id, 
 	        	success: function(result){
 	        		obj = JSON.parse(result);
 	        		console.log(obj);
@@ -379,6 +382,10 @@ Player Chips:
 		
    $(document).ready(function() {   
 
+   	var query_string = {};
+  	user_id = window.location.search.substring(1);
+  	console.log(user_id);
+
 		for ( var i = 0; i <= 6; i++)
 		{
 			$("#dealer-card" + i).css("margin-left: 20px;");
@@ -394,6 +401,7 @@ Player Chips:
 			shuffleNewDeck();
 			player1 = new Player();
 			
+			console.log("User ID =" + user_id);
 			getCard();
 			getCard();
 			

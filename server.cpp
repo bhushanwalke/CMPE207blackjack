@@ -17,6 +17,7 @@
 #include <vector>
 #include <sqlite3.h>
 #include <time.h> 
+
 #define VERSION 23
 #define BUFSIZE 8096
 #define ERROR      42
@@ -133,7 +134,8 @@ void system_details();
 
 void init_casino() {
 	table * temp, *current = NULL;
-	for (int i = 0; i < 3; i++) {
+	
+	for (int i = 0; i < 1; i++) {
 
 		temp = new table;
 		if (tables == NULL) {
@@ -148,6 +150,12 @@ void init_casino() {
 
 	}
 	
+	for(int i=0; i < 10; i++){
+		user u1;
+		u1.id = i+1;
+		u1.balance = 1000;
+		tables->users.push_back(u1);
+	}
 	
 }
 
@@ -169,7 +177,9 @@ void assign_table(user* u1) {
 //search if already playing on any other table
 // look if the requested table is free and add
 
+	tables->users.push_back(*u1);
 
+/*
 	table* current = tables;  
 	if(current == NULL){
 		current = new table;
@@ -190,7 +200,7 @@ void assign_table(user* u1) {
 
 	current->no_of_users++;
 	current->users.push_back(*u1);
-			
+		*/	
 
 
 
@@ -223,6 +233,7 @@ void shuffleNewDeck(){
 	u1.id = 1;
 	u1.balance = 1000;
 	u1.no_of_cards = 0;	
+	//for(int j=0; j < tables->users)
 
 
 	shuffle_array( (d1.card_value), (d1.card_img_no));
@@ -247,38 +258,53 @@ void shuffle_array(int *card_value, int *card_img_no) {
 }
 
 int* get_card(int user_id){
-
+	cout << "get_card";
 	int arr[2];
 	/*user* user_ptr = search_or_create_user(user_id);
 	*/
 	table* current_table = tables;
 	int user_index = -1;
-	user* current_user;
-	while(current_table != NULL && user_index == -1){
-		for(int i=0; i < current_table->users.size() > 0 ; i++){
+	user current_user;
+	
+	// while(current_table != NULL && user_index == -1){
+	// 	for(int i=0; i < current_table->users.size() > 0 ; i++){
 
-			if(current_table->users[i].id == user_id){
-				user_index = i;
-				current_user = &(current_table->users[i]);
-				break;
-			}
+	// 		if(current_table->users[i].id == user_id){
+	// 			user_index = i;
+	// 			current_user = &(current_table->users[i]);
+	// 			break;
+	// 		}
+	// 	}
+	// 	current_table = current_table->next;
+	// }
+	int found = 0;
+	if(tables==NULL)
+		cout << "TABLE NULL";
+	else{
+	cout << "table size = " << tables->users.size();
+	}
+	for(int k=0; k < tables->users.size() ; k++ ){
+		if(tables->users[k].id == user_id ){
+			found = 1;
+			break;
 		}
-		current_table = current_table->next;
+
 	}
 
-	cout << "Current_user_id = " << current_user->id;
+	current_user = tables->users[user_id%10];
+	cout << "Current_user_id = " << u1.id;
 
 
-	int card_num = current_user->no_of_cards;//user_ptr->no_of_cards;
+	int card_num = u1.no_of_cards;//user_ptr->no_of_cards;
 	int next_card = d1.card_img_no[d1.index];
 
-	current_user->cards[card_num] = d1.card_value[d1.index];
+	u1.cards[card_num] = d1.card_value[d1.index];
 
 	d1.index--;
 
 	arr[0] = card_num;
 	arr[1] = next_card;
-	current_user->no_of_cards++;	
+	u1.no_of_cards++;	
 	
 	/*
 	int next_card = d1.card_value[d1.index];
@@ -384,6 +410,7 @@ void leave_table() {
 
 int main(int argc, char **argv) {
 	srand(time(NULL));
+	init_casino();
 	shuffleNewDeck();
 	int pnum = 1, status;
 	pthread_t threads[100];
@@ -490,6 +517,7 @@ void handle_request(int socketfd) {
 	/* Check Login Details */
 	if (strncmp(&buffer[0], "GET /login_auth\0", 9) == 0
 			|| strncmp(&buffer[0], "get /login_auth\0", 9) == 0) {
+		cout<<"here1";
 		char *result = strtok(buffer, "?=&");
 		/*		result = strtok(NULL, "?=");
 		 result = strtok(NULL, "&=");*/
@@ -518,6 +546,7 @@ void handle_request(int socketfd) {
 	}
 	else if (strncmp(&buffer[0], "GET /get-dealer-card\0", 18) == 0
 			|| strncmp(&buffer[0], "get /get-dealer-card\0", 18) == 0) {
+		cout<<"here2";
 		pthread_mutex_lock(&mymutex);
 		good_requests += 1;
 		pthread_mutex_unlock(&mymutex);
@@ -530,6 +559,7 @@ void handle_request(int socketfd) {
 	} 
 	else if (strncmp(&buffer[0], "GET /join-table\0", 9) == 0
 			|| strncmp(&buffer[0], "get /join_table\0", 9) == 0) {
+		cout<<"here3";
 		pthread_mutex_lock(&mymutex);
 		good_requests += 1;
 		pthread_mutex_unlock(&mymutex);
@@ -572,7 +602,7 @@ void handle_request(int socketfd) {
 
 
 		//(void) strcpy(buffer, "GET /httpd/game.html");
-		int user_id = (int)buffer[15] - 48;
+		int user_id = (int)buffer[14] - 48;
 		cout<<"User Id:"<<user_id<<endl;
 
 		pthread_mutex_lock(&mymutex);
@@ -607,6 +637,8 @@ void handle_request(int socketfd) {
 		pthread_mutex_lock(&mymutex);
 		good_requests += 1;
 		pthread_mutex_unlock(&mymutex);
+
+
 	}
 	else if (strncmp(&buffer[0], "GET /join-table\0", 9) == 0 || strncmp(&buffer[0], "get /join_table\0", 9) == 0 ){
 		pthread_mutex_lock(&mymutex);
@@ -662,6 +694,7 @@ void handle_request(int socketfd) {
 	extension = "png";
 	len = strlen(extension.c_str());
 	if (!strncmp(&buffer[buflen - len], extension.c_str(), len)) {
+		cout<<"here4";
 		fstr = "image/png";
 		file_folder = "httpd/";
 		file_folder_len = strlen(file_folder);
@@ -749,100 +782,106 @@ user* login_auth(char *un, char *pw) {
 
 	 string s;
 	 user *u1;
-	 vector<string> data;
-	 isOpenDB = ConnectDB();
-	 char buff[1024];
-	 sqlite3_stmt *statement;
-	 sprintf(buff,
-	 		"SELECT id, balance from users where username = '%s' and password = '%s';",
-	 		un, pw);
-	 cout << "\n query:" << buff;
-	 char *query = buff;
 
-	 if (sqlite3_prepare(dbfile, query, -1, &statement, 0) == SQLITE_OK) {
-	 	int ctotal = sqlite3_column_count(statement);
-	 	int res = 0;
+	 u1->id = 1;//data[0];
+	u1->balance = 1;//data[1];
+	u1->name = un;
+	u1->no_of_cards = 0;
+	 return u1;
+	 // vector<string> data;
+	 // isOpenDB = ConnectDB();
+	 // char buff[1024];
+	 // sqlite3_stmt *statement;
+	 // sprintf(buff,
+	 // 		"SELECT id, balance from users where username = '%s' and password = '%s';",
+	 // 		un, pw);
+	 // cout << "\n query:" << buff;
+	 // char *query = buff;
 
-	 	while (1)
+	 // if (sqlite3_prepare(dbfile, query, -1, &statement, 0) == SQLITE_OK) {
+	 // 	int ctotal = sqlite3_column_count(statement);
+	 // 	int res = 0;
 
-	 	{
-	 		res = sqlite3_step(statement);
+	 // 	while (1)
 
-	 		if (res == SQLITE_ROW) {
-	 			for (int i = 0; i < ctotal; i++) {
-	 				data.push_back((char*) sqlite3_column_text(statement, i));
-	 			}
+	 // 	{
+	 // 		res = sqlite3_step(statement);
 
-	 			cout << endl;
-	 		}
+	 // 		if (res == SQLITE_ROW) {
+	 // 			for (int i = 0; i < ctotal; i++) {
+	 // 				data.push_back((char*) sqlite3_column_text(statement, i));
+	 // 			}
 
-	 		if (res == SQLITE_DONE) {
-	 			//cout << "\nSize:" << data.size();
-	 			for (size_t n = 0; n < data.size(); n++) {
-	 				cout << "\ndata:" << data[n] << " ";
-	 				cout << endl;
-	 			}
+	 // 			cout << endl;
+	 // 		}
+
+	 // 		if (res == SQLITE_DONE) {
+	 // 			//cout << "\nSize:" << data.size();
+	 // 			for (size_t n = 0; n < data.size(); n++) {
+	 // 				cout << "\ndata:" << data[n] << " ";
+	 // 				cout << endl;
+	 // 			}
 
 
 	 		
-	 		u1->id = data[0];
-	 		u1->balance = data[1];
-	 		u1->name = un;
-	 		u1->no_of_cards = 0;
+	 // 		u1->id = 1;//data[0];
+	 // 		u1->balance = 123;//data[1];
+	 // 		u1->name = un;
+	 // 		u1->no_of_cards = 0;
 
-	 			if (data.size() == 0) {
-	 				cout << "\nInvalid User Details, creating new user";
-	 				//create_user(un, pw);
-	 				return 0;
-	 			}
-	 			break;
-	 		}
+	 // 			if (data.size() == 0) {
+	 // 				cout << "\nInvalid User Details, creating new user";
+	 // 				//create_user(un, pw);
+	 // 				return 0;
+	 // 			}
+	 // 			break;
+	 // 		}
 
-	 	}
+	 // 	}
 
-	 	return u1;
-	 }
+	 // 	return u1;
+	 // }
 }
 
 int create_user(char *un, char *pw) {
-	 isOpenDB = ConnectDB();
-	 int balance = 1000;
-	 std::stringstream strm;
-	 strm << "insert into users(username,password,balance) values(" << un << ",'"
-	 		<< pw << "'," << balance << ")";
+	 // isOpenDB = ConnectDB();
+	 // int balance = 1000;
+	 // std::stringstream strm;
+	 // strm << "insert into users(username,password,balance) values(" << un << ",'"
+	 // 		<< pw << "'," << balance << ")";
 
-	 string s = strm.str();
-	 char *str = &s[0];
+	 // string s = strm.str();
+	 // char *str = &s[0];
 
-	 sqlite3_stmt *statement;
-	 int result;
-	 char *query = str;
-	 {
-	 	if (sqlite3_prepare(dbfile, query, -1, &statement, 0) == SQLITE_OK) {
-	 		int res = sqlite3_step(statement);
-	 		result = res;
-	 		sqlite3_finalize(statement);
-	 	}
-	 	return result;
-	 }
+	 // sqlite3_stmt *statement;
+	 // int result;
+	 // char *query = str;
+	 // {
+	 // 	if (sqlite3_prepare(dbfile, query, -1, &statement, 0) == SQLITE_OK) {
+	 // 		int res = sqlite3_step(statement);
+	 // 		result = res;
+	 // 		sqlite3_finalize(statement);
+	 // 	}
+	 // 	return result;
+	 // }
 
 	return 0;
 }
 
 bool ConnectDB() {
-	 if (sqlite3_open(DB, &dbfile) == SQLITE_OK) {
-	 	isOpenDB = true;
-	 	cout << "connection done";
-	 	return true;
-	 }
+	 // if (sqlite3_open(DB, &dbfile) == SQLITE_OK) {
+	 // 	isOpenDB = true;
+	 // 	cout << "connection done";
+	 // 	return true;
+	 // }
 
 	return false;
 }
 
 void DisonnectDB() {
-	 if (isOpenDB == true) {
-	 	sqlite3_close(dbfile);
-	 }
+	 // if (isOpenDB == true) {
+	 // 	sqlite3_close(dbfile);
+	 // }
 }
 /*
 

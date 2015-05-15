@@ -103,15 +103,31 @@ html .login-wrap:after {
   <h2>Login</h2>
 
   <div class="form">
-  <form method="GET" action="http://127.0.0.1:8082/login_auth">
-    <input type="text" placeholder="Username" name="un" />
-    <input type="password" placeholder="Password" name="pw" />
+  <!--form method="GET" action="http://127.0.0.1:8082/login_auth"-->
+    <input type="text" placeholder="Username" name="un" id="username"/>
+    <input type="password" placeholder="Password" name="pw" id="password"/>
     <button id="signin" type="submit"> Sign in </button>
   </div>
 </div>
 
   <script src='https://code.jquery.com/jquery-1.10.0.min.js'></script>
 
+<script>
+  $(document).ready(function() {   
+    $("#signin").click(function(){
+      console.log("clicked");
+      $.ajax({
+          url: "http://127.0.0.1:8082/login_auth/?un="+$("#username").val()+"&pw="+$("#password").val(),
+          success: function(result){
+            resp = JSON.parse(result);
+            window.location = resp.url;
+          },
+          error: function(result){
+          }          
+      });
+    });
+  });
+</script>
 </body>
 
 </html>

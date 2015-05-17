@@ -59,9 +59,11 @@ void assign_table(user*);
 void save_users();
 void load_user_data();
 void shuffleNewDeck();
+void clear_user_cards(int);
+void player_lost(int);
+void player_won(int);
 
-
-struct deck{
+struct deck {
 	int card_img_no[52];
 	int card_value[52];
 	int index;
@@ -71,7 +73,6 @@ struct deck{
 
 deck d1;
 /* User structure */
-
 
 user u1;
 vector<user*> user_data;
@@ -142,7 +143,7 @@ void system_details();
 
 void init_casino() {
 	table * temp, *current = NULL;
-	
+
 	for (int i = 0; i < 1; i++) {
 
 		temp = new table;
@@ -157,7 +158,7 @@ void init_casino() {
 		}
 
 	}
-	
+
 	// for(int i=0; i < 10; i++){
 	// 	user u1;
 	// 	u1.id = i+1;
@@ -174,87 +175,71 @@ void init_casino() {
 
 void load_user_data() {
 	cout << "Load user data";
-	int i=0,	no_of_members=100;
+	int i = 0, no_of_members = 100;
 	string filePath;
-	ifstream  dimensionsInFile;
+	ifstream dimensionsInFile;
 
 	user *temp;
 
-	dimensionsInFile.open ("users.dat");	
+	dimensionsInFile.open("users.dat");
 
 	int size = user_data.size();
 	cout << "\nSize = " << size;
 	//cout << dimensionsInFile;											
-	if (!dimensionsInFile)
-	{
-		cout<<"Cannot load file"<<endl;
-		return ;
-	}
-	else
-	{
-		while(dimensionsInFile != NULL)
-		{	
+	if (!dimensionsInFile) {
+		cout << "Cannot load file" << endl;
+		return;
+	} else {
+		while (dimensionsInFile != NULL) {
 			// write struct data from file	
 			temp = new user;
 			user_data.push_back(temp);
-			
 
 			// //cout << filePath;
-			dimensionsInFile >> user_data[i]->id
-							 >> user_data[i]->name
-							 >> user_data[i]->password		
-							 >> user_data[i]->balance;
-			cout<<"\nMember no "<<i<<"loaded"<<endl;
-			cout<< user_data[i]->id<< " " <<
-			user_data[i]->name<< " " <<
-			user_data[i]->password<< " " <<		
-			user_data[i]->balance << "\n";
+			dimensionsInFile >> user_data[i]->id >> user_data[i]->name
+					>> user_data[i]->password >> user_data[i]->balance;
+			cout << "\nMember no " << i << "loaded" << endl;
+			cout << user_data[i]->id << " " << user_data[i]->name << " "
+					<< user_data[i]->password << " " << user_data[i]->balance
+					<< "\n";
 
+			tables->users.push_back(*user_data[i]);
 			dimensionsInFile >> filePath;
-
 
 			i++;
 			//cout << "\n" << i<<endl;
-			
+
 		}
-		cout <<"All members have been successfully loaded"<<endl;
+		cout << "All members have been successfully loaded" << endl;
 		dimensionsInFile.close();
 	}
 }
-	/*user {
-	string name;
-	int id;
-	float balance;
-	int cards[13];
-	int no_of_cards;
-	user * next;
-	};*/
+/*user {
+ string name;
+ int id;
+ float balance;
+ int cards[13];
+ int no_of_cards;
+ user * next;
+ };*/
 
+void save_users() {
+	int no, i_of_members = 100;
+	string filePath;
+	ofstream dimensionsOutfile;
+	dimensionsOutfile.open("users.dat");
+	if (!dimensionsOutfile) {
+		cout << "Cannot load file" << endl;
+		return;
+	} else {
+		for (int i = 0; i < tables->users.size(); i++) {// write struct data from file	
 
-void save_users()
-{
-	int no,i_of_members=100;	
-	string	filePath;
-	ofstream  dimensionsOutfile;		
-	dimensionsOutfile.open ("users.dat");												
-	if (!dimensionsOutfile)
-	{
-		cout<<"Cannot load file"<<endl;
-		return ;
-	}
-	else
-	{
-		for(int i = 0; i < user_data.size(); i++)
-		{	// write struct data from file	
-
-			dimensionsOutfile<<
-			user_data[i]->id<<" "<<
-			user_data[i]->name<<" "<<
-			user_data[i]->password<<	" "<<	
-			user_data[i]->balance<< "\n";
-			cout<<"\n Member no "<<i<<"stored"<<endl;
+			dimensionsOutfile << tables->users[i].id << " " << tables->users[i].name
+					<< " " << tables->users[i].password << " "
+					<< tables->users[i].balance << "\n";
+			cout << "\n Member no " << i << "stored" << endl;
 		}
-		cout <<"\nAll members have been successfully saved"<<endl;
+		cout << "\nAll members have been successfully saved" << endl;
 		dimensionsOutfile.close();
 	}
 
@@ -273,37 +258,35 @@ void assign_table(user* u1) {
 //search if already playing on any other table
 // look if the requested table is free and add
 
-	for(int i = 0; i < tables->users.size(); i++){
-		if (tables->users[i].id == u1->id) 
+	for (int i = 0; i < tables->users.size(); i++) {
+		if (tables->users[i].id == u1->id)
 			return;
 	}
 
 	tables->users.push_back(*u1);
 
-/*
-	table* current = tables;  
-	if(current == NULL){
-		current = new table;
-		current->next = NULL;
-	}
-	while(current->no_of_users > 5){
-		if(current->next != NULL)
-			current = current->next;
-		else{
-			current->next = new table;
-			current = current->next;
-			current->next = NULL;
-			current->no_of_users = 0;
-			break;
-		}
-	}
+	/*
+	 table* current = tables;  
+	 if(current == NULL){
+	 current = new table;
+	 current->next = NULL;
+	 }
+	 while(current->no_of_users > 5){
+	 if(current->next != NULL)
+	 current = current->next;
+	 else{
+	 current->next = new table;
+	 current = current->next;
+	 current->next = NULL;
+	 current->no_of_users = 0;
+	 break;
+	 }
+	 }
 
 
-	current->no_of_users++;
-	current->users.push_back(*u1);
-		*/	
-
-
+	 current->no_of_users++;
+	 current->users.push_back(*u1);
+	 */
 
 }
 
@@ -311,42 +294,50 @@ void create_table() {
 
 }
 
-void shuffleNewDeck(){
+void clear_user_cards(int table_no){
+
+	int size = tables->users.size();
+	for(int i=0; i < size; i++){
+		cout << tables->users[i].name << "\n";
+		tables->users[i].no_of_cards = 0;
+	}
+	u1.no_of_cards = 0;
+}
+
+void shuffleNewDeck() {
 	cout << "\n ShufflingNewDeck............";
 	string downCardFile = "images/b2fv.png";
 
 	int value = 14;
 	int j = 0;
-	for (int i = 1; i <= 52; ++i)
-	{
-		d1.card_img_no[i]= i;
+	for (int i = 1; i <= 52; ++i) {
+		d1.card_img_no[i] = i;
 		d1.card_value[i] = value;
 		j++;
 		j = j % 4;
-		if ( j == 0) 
+		if (j == 0)
 			value--;
-	}	
+	}
 	d1.index = 51;
 	d1.no_of_cards = 0;
 	//initialize test user -- to be removed
-	
+
 	// u1.name = "Varun";
 	// u1.id = 1;
 	// u1.balance = 1000;
 	// u1.no_of_cards = 0;	
 	//for(int j=0; j < tables->users)
 
-
-	shuffle_array( (d1.card_value), (d1.card_img_no));
+	shuffle_array((d1.card_value), (d1.card_img_no));
 }
 
 void shuffle_array(int *card_value, int *card_img_no) {
 	int tmp, current, top = 52;
-	
-	if(top) 
-		while(--top) {
 
-			current = rand()%52;
+	if (top)
+		while (--top) {
+
+			current = rand() % 52;
 			tmp = card_value[current];
 			card_value[current] = card_value[top];
 			card_value[top] = tmp;
@@ -354,18 +345,18 @@ void shuffle_array(int *card_value, int *card_img_no) {
 			tmp = card_img_no[current];
 			card_img_no[current] = card_img_no[top];
 			card_img_no[top] = tmp;
-			
+
 		}
 }
 
-	int* get_card(int user_id){
-		cout << "get_card";
-		int arr[2];
+int* get_card(int user_id) {
+	cout << "get_card";
+	int arr[2];
 	/*user* user_ptr = search_or_create_user(user_id);
-	*/
-		table* current_table = tables;
-		int user_index = -1;
-		user current_user;
+	 */
+	table* current_table = tables;
+	int user_index = -1;
+	user current_user;
 
 	// while(current_table != NULL && user_index == -1){
 	// 	for(int i=0; i < current_table->users.size() > 0 ; i++){
@@ -378,25 +369,24 @@ void shuffle_array(int *card_value, int *card_img_no) {
 	// 	}
 	// 	current_table = current_table->next;
 	// }
-		int found = 0;
-		if(current_table == NULL)
-			cout << "TABLE NULL";
-		else{
-			cout << "table size = " << tables->users.size();
-		}
-		// for(int k=0; k < tables->users.size() ; k++ ){
-		// 	if(tables->users[k].id == user_id ){
-		// 		found = 1;
-		// 		break;
-		// 	}
+	int found = 0;
+	if (current_table == NULL)
+		cout << "TABLE NULL";
+	else {
+		cout << "table size = " << tables->users.size();
+	}
+	// for(int k=0; k < tables->users.size() ; k++ ){
+	// 	if(tables->users[k].id == user_id ){
+	// 		found = 1;
+	// 		break;
+	// 	}
 
-		// }
+	// }
 
-		// current_user = tables->users[user_id];
-		// cout << "Current_user_id = " << current_user.id;
+	// current_user = tables->users[user_id];
+	// cout << "Current_user_id = " << current_user.id;
 
-
-	int card_num = u1.no_of_cards;//user_ptr->no_of_cards;
+	int card_num = u1.no_of_cards;		//user_ptr->no_of_cards;
 	int next_card = d1.card_img_no[d1.index];
 
 	u1.cards[card_num] = d1.card_value[d1.index];
@@ -405,14 +395,14 @@ void shuffle_array(int *card_value, int *card_img_no) {
 
 	arr[0] = card_num;
 	arr[1] = next_card;
-	u1.no_of_cards++;	
-	
+	u1.no_of_cards++;
+
 	/*
-	int next_card = d1.card_value[d1.index];
-	d1.index++;
-	user_ptr->cards[user_ptr->no_of_cards] = next_card;
-	user_ptr->no_of_cards++;
-	*/
+	 int next_card = d1.card_value[d1.index];
+	 d1.index++;
+	 user_ptr->cards[user_ptr->no_of_cards] = next_card;
+	 user_ptr->no_of_cards++;
+	 */
 	return arr;
 	// $("#container").append("<img id=\"card" + cardNum + "\" src=\"\" />");
 	//    var left = 300 + (25 * cardNum); //72
@@ -422,7 +412,7 @@ void shuffle_array(int *card_value, int *card_img_no) {
 	// animateCardToLocation(wrappedCard, nextCard.file); 
 }
 
-int* get_dealer_card(int table_id, int* resp){
+int* get_dealer_card(int table_id, int* resp) {
 	//int resp[2];
 	int card_num = d1.no_of_cards;
 	int next_card = d1.card_img_no[d1.index];
@@ -441,56 +431,50 @@ int* get_dealer_card(int table_id, int* resp){
 	// animateCardToLocation(wrappedCard, cardNum == 0 ? downCardFile : nextCard.file);
 }
 
-int evaluate_hand(int user_id){
+int evaluate_hand(int user_id) {
 	int value = 0;
 	int num_aces = 0;
 	int no_of_cards = u1.no_of_cards;
 	int *user_cards = u1.cards;
-	for(int i = 0; i < no_of_cards; i++)
-	{	
-			//console.log(cardList[i].value);
-		if( user_cards[i] >= 10 && user_cards[i] <= 13)
+
+	
+	for (int i = 0; i < no_of_cards; i++) {
+		//console.log(cardList[i].value);
+		if (user_cards[i] >= 10 && user_cards[i] <= 13)
 			value = value + 10;
-		else if(user_cards[i] == 14)
-		{
+		else if (user_cards[i] == 14) {
 			value = value + 11;
 			num_aces++;
-		}
-		else
+		} else
 			value = value + user_cards[i];
 	}
 
-	while ( value > 21 && num_aces > 0)
-	{
+	while (value > 21 && num_aces > 0) {
 		value = value - 10;
 		num_aces--;
 	}
-
+	save_users();
 	return value;
 }
 
-int evaluate_dealer_hand(int table_id){
+int evaluate_dealer_hand(int table_id) {
 	int value = 0;
 	int num_aces = 0;
 	int no_of_cards = d1.no_of_cards;
 	int *dealer_cards = d1.cards;
-	for(int i = 0; i <= no_of_cards; i++)
-	{	
-			//console.log(cardList[i].value);
+	for (int i = 0; i <= no_of_cards; i++) {
+		//console.log(cardList[i].value);
 
-		if( dealer_cards[i] >= 10 && dealer_cards[i] <= 13)
+		if (dealer_cards[i] >= 10 && dealer_cards[i] <= 13)
 			value = value + 10;
-		else if(dealer_cards[i] == 14)
-		{
+		else if (dealer_cards[i] == 14) {
 			value = value + 11;
 			num_aces++;
-		}
-		else
+		} else
 			value = value + dealer_cards[i];
 	}
 
-	while ( value > 21 && num_aces > 0)
-	{
+	while (value > 21 && num_aces > 0) {
 		value = value - 10;
 		num_aces--;
 	}
@@ -498,7 +482,26 @@ int evaluate_dealer_hand(int table_id){
 	return value;
 }
 
-void hit(int user_id){
+void player_lost(int user_id){
+	int size = tables->users.size();
+	cout << size << "\n";
+	if (size > user_id){
+		tables->users[user_id].balance -= 10;
+	//	u1.balance -= 10;
+	}
+}
+
+void player_won(int user_id){
+	int size = tables->users.size();
+	cout << size << "\n";
+	if (size > user_id){
+		tables->users[user_id].balance += 10;
+		//u1.balance += 10;
+	}
+
+}
+
+void hit(int user_id) {
 	//Just get_card is called from js
 }
 
@@ -552,17 +555,17 @@ int main(int argc, char **argv) {
 	for (i = 1;; i++) {
 		length = sizeof(cli_addr);
 		if ((socketfd = accept(listenfd, (struct sockaddr *) &cli_addr, &length))
-			< 0) {
+				< 0) {
 			printf("system call accept error");
-		exit(0);
-	}
+			exit(0);
+		}
 
-	if (pthread_create(&threads[i], NULL,
-		(void * (*)(void *))handle_request, (void *)socketfd) < 0)
+		if (pthread_create(&threads[i], NULL,
+				(void * (*)(void *))handle_request, (void *)socketfd) < 0)
 		printf("Error creating thread");
 
-	sleep(1);
-}
+		sleep(1);
+	}
 
 }
 
@@ -576,37 +579,37 @@ void handle_request(int socketfd) {
 
 	ret = read(socketfd, buffer, BUFSIZE); /* read Web request in one go */
 	if (ret == 0 || ret == -1) { /* read failure stop now */
-	printf("failed to read browser request");
-	pthread_mutex_lock(&mymutex);
-	bad_requests += 1;
-	pthread_mutex_unlock(&mymutex);
+		printf("failed to read browser request");
+		pthread_mutex_lock(&mymutex);
+		bad_requests += 1;
+		pthread_mutex_unlock(&mymutex);
 		// exit(0);
-	write(socketfd,
-		"HTTP/1.1 404 Not Found\nContent-Length: 185\nConnection: close\nContent-Type: text/html\n\n<html><head>\n<title>404 Not Found</title>\n</head><body>\n<h1>Forbidden</h1>\nThe requested URL, file type or operation is not allowed on this simple static file webserver.\n</body></html>\n",
-		280);
-	send_and_close_socket(socketfd, buffer);
-}
+		write(socketfd,
+				"HTTP/1.1 404 Not Found\nContent-Length: 185\nConnection: close\nContent-Type: text/html\n\n<html><head>\n<title>404 Not Found</title>\n</head><body>\n<h1>Forbidden</h1>\nThe requested URL, file type or operation is not allowed on this simple static file webserver.\n</body></html>\n",
+				280);
+		send_and_close_socket(socketfd, buffer);
+	}
 
 	//printf("New thread called");
 	if (ret > 0 && ret < BUFSIZE) /* return code is valid chars */
 		buffer[ret] = 0; /* terminate the buffer */
-else
-	buffer[0] = 0;
+	else
+		buffer[0] = 0;
 	for (i = 0; i < ret; i++) { /* remove CF and LF characters */
 
-if (buffer[i] == '\r' || buffer[i] == '\n')
-	buffer[i] = '*';
-}
-if (strncmp(buffer, "GET ", 4) && strncmp(buffer, "get ", 4)) {
-	printf("Only simple GET operation supported:%s", buffer);
-}
+		if (buffer[i] == '\r' || buffer[i] == '\n')
+			buffer[i] = '*';
+	}
+	if (strncmp(buffer, "GET ", 4) && strncmp(buffer, "get ", 4)) {
+		printf("Only simple GET operation supported:%s", buffer);
+	}
 
 	for (i = 4; i < BUFSIZE; i++) { /* null terminate after the second space to ignore extra stuff */
 		if (buffer[i] == ' ') { /* string is "GET URL " +lots of other stuff */
-buffer[i] = 0;
-break;
-}
-}
+			buffer[i] = 0;
+			break;
+		}
+	}
 
 	/*
 	 create various parser for different requests
@@ -616,13 +619,13 @@ break;
 	 }
 	 */
 
-	 cout << "\nNew request" <<buffer;
+	cout << "\nNew request" << buffer;
 
 	/* Check Login Details */
-	 if (strncmp(&buffer[0], "GET /login_auth\0", 9) == 0
-	 	|| strncmp(&buffer[0], "get /login_auth\0", 9) == 0) {
-	 	cout<<"here1";
-	 char *result = strtok(buffer, "?=&");
+	if (strncmp(&buffer[0], "GET /login_auth\0", 9) == 0
+			|| strncmp(&buffer[0], "get /login_auth\0", 9) == 0) {
+		cout << "here1";
+		char *result = strtok(buffer, "?=&");
 		/*		result = strtok(NULL, "?=");
 		 result = strtok(NULL, "&=");*/
 		char *username;	// = result;
@@ -643,50 +646,82 @@ break;
 		cout << "\nPassword = " << password << "\n";
 		user_id = login_auth(username, password);
 
-
 		cout << "\nUser id=" << user_id;
-		if(user_id > 0){
+		if (user_id > 0) {
 			cout << "632";
 			(void) sprintf(buffer,
-				"HTTP/1.1 200 OK\nServer: 207httpd/%d.0\nContent-Length: %ld\nConnection: close\nContent-Type: %s\n\n{\"url\":\"http://127.0.0.1:8082/game.html/%d\"} \n",
+					"HTTP/1.1 200 OK\nServer: 207httpd/%d.0\nContent-Length: %ld\nConnection: close\nContent-Type: %s\n\n{\"url\":\"http://127.0.0.1:8082/game.html/%d\"} \n",
 					VERSION, 45, "text/html", user_id);
-			send_and_close_socket(socketfd,buffer);
+			send_and_close_socket(socketfd, buffer);
 //			(void) sprintf(buffer, "GET /httpd/game.html");
-		}else{
-			(void) sprintf(buffer, "GET /\0");
+		} else {
+			(void) sprintf(buffer,
+					"HTTP/1.1 200 OK\nServer: 207httpd/%d.0\nContent-Length: %ld\nConnection: close\nContent-Type: %s\n\n{\"url\":\"http://127.0.0.1:8082/\"} \n",
+					VERSION, 35, "text/html");
+			send_and_close_socket(socketfd, buffer);
 		}
 
-	}
-	else if (strncmp(&buffer[0], "GET /get-dealer-card\0", 18) == 0
-		|| strncmp(&buffer[0], "get /get-dealer-card\0", 18) == 0) {
-		cout<<"\n\nhere2";
-	pthread_mutex_lock(&mymutex);
-	good_requests += 1;
-	pthread_mutex_unlock(&mymutex);
-	int* arr = new int[2];
-	//int* resp;// = arr;
-	arr = get_dealer_card(0, arr); 
-	cout << "\n Resp get dealer card = " << arr[0] << " " << arr[1];
-	(void) sprintf(buffer,
-		"HTTP/1.1 200 OK\nServer: 207httpd/%d.0\nContent-Length: %ld\nConnection: close\nContent-Type: %s\n\n{\"card_no\":%d, \"next_card\":%d} \n",
-				VERSION, 31, "text/html", arr[0], arr[1]); /* Header + a blank line */
-		
-		send_and_close_socket(socketfd,buffer);
-	} 
-	else if (strncmp(&buffer[0], "GET /join-table\0", 9) == 0
-		|| strncmp(&buffer[0], "get /join_table\0", 9) == 0) {
-		cout<<"here3";
-	pthread_mutex_lock(&mymutex);
-	good_requests += 1;
-	pthread_mutex_unlock(&mymutex);
+	} else if (strncmp(&buffer[0], "GET /player-lost\0", 13) == 0
+			|| strncmp(&buffer[0], "get /player-lost\0", 13) == 0) {
+		cout << "\npalyer-lost";
+		int user_id = (int) buffer[17] - 48;
+		cout << "User lost id:" << user_id << endl;
+		pthread_mutex_lock(&mymutex);
+		good_requests += 1;
+		pthread_mutex_unlock(&mymutex);
+		int* arr = new int[2];
+		//int* resp;// = arr;
+		player_lost(user_id);
+		(void) sprintf(buffer,
+				"HTTP/1.1 200 OK\nServer: 207httpd/%d.0\nContent-Length: %ld\nConnection: close\nContent-Type: %s\n\n\"Success\"",
+				VERSION, 7, "text/html"); /* Header + a blank line */
 
-	(void) sprintf(buffer,
-		"HTTP/1.1 200 OK\nServer: 207httpd/%d.0\nContent-Length: %ld\nConnection: close\nContent-Type: %s\n\n{\"player_score\":%d}  \n",
+		send_and_close_socket(socketfd, buffer);
+	} else if (strncmp(&buffer[0], "GET /player-won\0", 13) == 0
+			|| strncmp(&buffer[0], "get /player-won\0", 13) == 0) {
+		cout << "\npalyer-won";
+		int user_id = (int) buffer[16] - 48;
+		cout << "User won id:" << user_id << endl;
+		pthread_mutex_lock(&mymutex);
+		good_requests += 1;
+		pthread_mutex_unlock(&mymutex);
+		int* arr = new int[2];
+		//int* resp;// = arr;
+		player_won(user_id);
+		(void) sprintf(buffer,
+				"HTTP/1.1 200 OK\nServer: 207httpd/%d.0\nContent-Length: %ld\nConnection: close\nContent-Type: %s\n\n\"Success\"",
+				VERSION, 7, "text/html"); /* Header + a blank line */
+
+		send_and_close_socket(socketfd, buffer);
+	}else if (strncmp(&buffer[0], "GET /get-dealer-card\0", 18) == 0
+			|| strncmp(&buffer[0], "get /get-dealer-card\0", 18) == 0) {
+		cout << "\n\nhere2";
+		pthread_mutex_lock(&mymutex);
+		good_requests += 1;
+		pthread_mutex_unlock(&mymutex);
+		int* arr = new int[2];
+		//int* resp;// = arr;
+		arr = get_dealer_card(0, arr);
+		cout << "\n Resp get dealer card = " << arr[0] << " " << arr[1];
+		(void) sprintf(buffer,
+				"HTTP/1.1 200 OK\nServer: 207httpd/%d.0\nContent-Length: %ld\nConnection: close\nContent-Type: %s\n\n{\"card_no\":%d, \"next_card\":%d} \n",
+				VERSION, 31, "text/html", arr[0], arr[1]); /* Header + a blank line */
+
+		send_and_close_socket(socketfd, buffer);
+	} else if (strncmp(&buffer[0], "GET /join-table\0", 9) == 0
+			|| strncmp(&buffer[0], "get /join_table\0", 9) == 0) {
+		cout << "here3";
+		pthread_mutex_lock(&mymutex);
+		good_requests += 1;
+		pthread_mutex_unlock(&mymutex);
+
+		(void) sprintf(buffer,
+				"HTTP/1.1 200 OK\nServer: 207httpd/%d.0\nContent-Length: %ld\nConnection: close\nContent-Type: %s\n\n{\"player_score\":%d}  \n",
 				VERSION, 20, "text/html", 6); /* Header + a blank line */
-		
-		send_and_close_socket(socketfd,buffer);
-	}
-	else if (strncmp(&buffer[0], "GET /evaluate-dealer-hand\0", 21) == 0 || strncmp(&buffer[0], "get /evaluate-dealer-hand\0", 21) == 0 ){
+
+		send_and_close_socket(socketfd, buffer);
+	} else if (strncmp(&buffer[0], "GET /evaluate-dealer-hand\0", 21) == 0
+			|| strncmp(&buffer[0], "get /evaluate-dealer-hand\0", 21) == 0) {
 		pthread_mutex_lock(&mymutex);
 		good_requests += 1;
 		pthread_mutex_unlock(&mymutex);
@@ -694,89 +729,85 @@ break;
 		int dealer_score = evaluate_dealer_hand(1);
 
 		(void) sprintf(buffer,
-			"HTTP/1.1 200 OK\nServer: 207httpd/%d.0\nContent-Length: %ld\nConnection: close\nContent-Type: %s\n\n{\"dealer_score\":%d}  \n",
+				"HTTP/1.1 200 OK\nServer: 207httpd/%d.0\nContent-Length: %ld\nConnection: close\nContent-Type: %s\n\n{\"dealer_score\":%d}  \n",
 				VERSION, 20, "text/html", dealer_score); /* Header + a blank line */
-			send_and_close_socket(socketfd, buffer);
-		} 
-		else if (strncmp(&buffer[0], "GET /evaluate-hand\0", 12) == 0 || strncmp(&buffer[0], "get /evaluate-hand\0", 12) == 0 ){
-
+		send_and_close_socket(socketfd, buffer);
+	} else if (strncmp(&buffer[0], "GET /evaluate-hand\0", 12) == 0
+			|| strncmp(&buffer[0], "get /evaluate-hand\0", 12) == 0) {
 
 		//(void) strcpy(buffer, "GET /httpd/game.html");
 
-			pthread_mutex_lock(&mymutex);
-			good_requests += 1;
-			pthread_mutex_unlock(&mymutex);
+		pthread_mutex_lock(&mymutex);
+		good_requests += 1;
+		pthread_mutex_unlock(&mymutex);
 
-			int player_score = evaluate_hand(1);
+		int player_score = evaluate_hand(1);
 
-			(void) sprintf(buffer,
+		(void) sprintf(buffer,
 				"HTTP/1.1 200 OK\nServer: 207httpd/%d.0\nContent-Length: %ld\nConnection: close\nContent-Type: %s\n\n{\"player_score\":%d}  \n",
 				VERSION, 20, "text/html", player_score); /* Header + a blank line */
-				send_and_close_socket(socketfd, buffer);
-			}
-			else if (strncmp(&buffer[0], "GET /get-card\0", 12) == 0 || strncmp(&buffer[0], "get /get-card\0", 9) == 0 ){
-
+		send_and_close_socket(socketfd, buffer);
+	} else if (strncmp(&buffer[0], "GET /get-card\0", 12) == 0
+			|| strncmp(&buffer[0], "get /get-card\0", 9) == 0) {
 
 		//(void) strcpy(buffer, "GET /httpd/game.html");
-				int user_id = 1;//(int)buffer[14] - 48;
-				cout<<"User Id:"<<user_id<<endl;
+		int user_id = 1;	//(int)buffer[14] - 48;
+		cout << "User Id:" << user_id << endl;
 
-				pthread_mutex_lock(&mymutex);
-				good_requests += 1;
-				pthread_mutex_unlock(&mymutex);
+		pthread_mutex_lock(&mymutex);
+		good_requests += 1;
+		pthread_mutex_unlock(&mymutex);
 
-				int* arr = get_card(user_id);
+		int* arr = get_card(user_id);
 
-				(void) sprintf(buffer,
-					"HTTP/1.1 200 OK\nServer: 207httpd/%d.0\nContent-Length: %ld\nConnection: close\nContent-Type: %s\n\n{\"card_no\":%d, \"next_card\":%d}  \n",
+		(void) sprintf(buffer,
+				"HTTP/1.1 200 OK\nServer: 207httpd/%d.0\nContent-Length: %ld\nConnection: close\nContent-Type: %s\n\n{\"card_no\":%d, \"next_card\":%d}  \n",
 				VERSION, 30, "text/html", arr[0], arr[1]); /* Header + a blank line */
-					send_and_close_socket(socketfd, buffer);
-				}
-				else if (strncmp(&buffer[0], "GET /shuffleNewDeck\0", 9) == 0 || strncmp(&buffer[0], "get /shuffleNewDeck\0", 9) == 0 ){
-
+		send_and_close_socket(socketfd, buffer);
+	} else if (strncmp(&buffer[0], "GET /shuffleNewDeck\0", 9) == 0
+			|| strncmp(&buffer[0], "get /shuffleNewDeck\0", 9) == 0) {
 
 		//(void) strcpy(buffer, "GET /httpd/game.html");
 
-					pthread_mutex_lock(&mymutex);
-					good_requests += 1;
-					pthread_mutex_unlock(&mymutex);
-
-					//shuffleNewDeck();
-					(void) sprintf(buffer,
-						"HTTP/1.1 200 OK\nServer: 207httpd/%d.0\nContent-Length: %ld\nConnection: close\nContent-Type: %s\n\n{\"a\":1,\"b\":2}\n",
+		pthread_mutex_lock(&mymutex);
+		good_requests += 1;
+		pthread_mutex_unlock(&mymutex);
+		clear_user_cards(1);
+		shuffleNewDeck();
+		(void) sprintf(buffer,
+				"HTTP/1.1 200 OK\nServer: 207httpd/%d.0\nContent-Length: %ld\nConnection: close\nContent-Type: %s\n\n{\"a\":1,\"b\":2}\n",
 				VERSION, 14, "text/html"); /* Header + a blank line */
-						send_and_close_socket(socketfd, buffer);
-					}
-					else if (strncmp(&buffer[0], "GET /game\0", 9) == 0 || strncmp(&buffer[0], "get /game\0", 9) == 0 ){
+		send_and_close_socket(socketfd, buffer);
+	} else if (strncmp(&buffer[0], "GET /game\0", 9) == 0
+			|| strncmp(&buffer[0], "get /game\0", 9) == 0) {
 
-						(void) strcpy(buffer, "GET /httpd/game.html");
-						pthread_mutex_lock(&mymutex);
-						good_requests += 1;
-						save_users();
-						pthread_mutex_unlock(&mymutex);
-					}
-					else if (strncmp(&buffer[0], "GET /join-table\0", 9) == 0 || strncmp(&buffer[0], "get /join_table\0", 9) == 0 ){
-						pthread_mutex_lock(&mymutex);
-						good_requests += 1;
-						pthread_mutex_unlock(&mymutex);
-			//printf("Buffer %d", buffer[16]);
-						int tableNo = (int)buffer[16] - 48;
-						cout<<"Table No:"<<tableNo<<endl;
+		(void) strcpy(buffer, "GET /httpd/game.html");
+		pthread_mutex_lock(&mymutex);
+		good_requests += 1;
+		save_users();
+		pthread_mutex_unlock(&mymutex);
+	} else if (strncmp(&buffer[0], "GET /join-table\0", 9) == 0
+			|| strncmp(&buffer[0], "get /join_table\0", 9) == 0) {
+		pthread_mutex_lock(&mymutex);
+		good_requests += 1;
+		pthread_mutex_unlock(&mymutex);
+		//printf("Buffer %d", buffer[16]);
+		int tableNo = (int) buffer[16] - 48;
+		cout << "Table No:" << tableNo << endl;
 
-						(void) sprintf(buffer,
-							"HTTP/1.1 200 OK\nServer: 207httpd/%d.0\nContent-Length: %ld\nConnection: close\nContent-Type: %s\n\n{\"a\":1,\"b\":2}\n",
+		(void) sprintf(buffer,
+				"HTTP/1.1 200 OK\nServer: 207httpd/%d.0\nContent-Length: %ld\nConnection: close\nContent-Type: %s\n\n{\"a\":1,\"b\":2}\n",
 				VERSION, 14, "text/html"); /* Header + a blank line */
 
-
-							send_and_close_socket(socketfd, buffer);
-						}
-	else if (!strncmp(&buffer[0], "GET /\0", 6) || !strncmp(&buffer[0], "get /\0", 6)) /* convert no filename to index file */
-						{
-							(void) strcpy(buffer, "GET /httpd/index.html");
-							pthread_mutex_lock(&mymutex);
-							good_requests += 1;
-							pthread_mutex_unlock(&mymutex);
-						}
+		send_and_close_socket(socketfd, buffer);
+	} else if (!strncmp(&buffer[0], "GET /\0", 6)
+			|| !strncmp(&buffer[0], "get /\0", 6)) /* convert no filename to index file */
+			{
+		(void) strcpy(buffer, "GET /httpd/index.html");
+		pthread_mutex_lock(&mymutex);
+		good_requests += 1;
+		pthread_mutex_unlock(&mymutex);
+	}
 
 	buflen = strlen(buffer);
 	fstr = (char *) 0;
@@ -788,7 +819,7 @@ break;
 	cout << "\nBuff len= " << buflen << "\nLen = " << len;
 	cout << "\nBuff c = " << &buffer[buflen - len - 2] << "\nLen = " << len;
 	cout << strncmp(&buffer[buflen - len - 2], extension.c_str(), len);
-	if (!strncmp(&buffer[buflen - len ], extension.c_str(), len)) {
+	if (!strncmp(&buffer[buflen - len], extension.c_str(), len)) {
 		cout << "\nText file";
 		fstr = "text/html";
 	}
@@ -814,7 +845,7 @@ break;
 	extension = "png";
 	len = strlen(extension.c_str());
 	if (!strncmp(&buffer[buflen - len], extension.c_str(), len)) {
-		cout<<"here4";
+		cout << "here4";
 		fstr = "image/png";
 		file_folder = "httpd/";
 		file_folder_len = strlen(file_folder);
@@ -828,52 +859,52 @@ break;
 		int k = 0;
 
 		for (int j = file_folder_len, k = 5; j < file_folder_len + buflen - 5;
-			j++, k++) {
+				j++, k++) {
 
 			folder_path[j] = buffer[k];
 
-	}
-	cout << "\n";
+		}
+		cout << "\n";
 
-}
-if (fstr == 0) {
+	}
+	if (fstr == 0) {
+		pthread_mutex_lock(&mymutex);
+		bad_requests += 1;
+		pthread_mutex_unlock(&mymutex);
+		printf("file extension type not supported:%s", buffer);
+	}
+
+	if (file_folder_len == 0) {
+
+		if ((file_fd = open(&buffer[5], O_RDONLY)) == -1) {
+			write(socketfd,
+					"HTTP/1.1 404 Not Found\nContent-Length: 185\nConnection: close\nContent-Type: text/html\n\n<html><head>\n<title>404 Not Found</title>\n</head><body>\n<h1>Forbidden</h1>\nThe requested URL, file type or operation is not allowed on this simple static file webserver.\n</body></html>\n",
+					280);
+
+		}
+	} else {
+		if ((file_fd = open(folder_path, O_RDONLY)) == -1) {
+			write(socketfd,
+					"HTTP/1.1 404 Not Found\nContent-Length: 185\nConnection: close\nContent-Type: text/html\n\n<html><head>\n<title>404 Not Found</title>\n</head><body>\n<h1>Forbidden</h1>\nThe requested URL, file type or operation is not allowed on this simple static file webserver.\n</body></html>\n",
+					280);
+
+		}
+	}
+
+	struct stat filestatus;
+
+	int rc = fstat(file_fd, &filestatus);
+	if (rc < 0)
+		printf("error opening the file\n");
+	fflush(stdout);
 	pthread_mutex_lock(&mymutex);
-	bad_requests += 1;
+	total_filesize += filestatus.st_size;
 	pthread_mutex_unlock(&mymutex);
-	printf("file extension type not supported:%s", buffer);
-}
-
-if (file_folder_len == 0) {
-
-	if ((file_fd = open(&buffer[5], O_RDONLY)) == -1) {
-		write(socketfd,
-			"HTTP/1.1 404 Not Found\nContent-Length: 185\nConnection: close\nContent-Type: text/html\n\n<html><head>\n<title>404 Not Found</title>\n</head><body>\n<h1>Forbidden</h1>\nThe requested URL, file type or operation is not allowed on this simple static file webserver.\n</body></html>\n",
-			280);
-
-	}
-} else {
-	if ((file_fd = open(folder_path, O_RDONLY)) == -1) {
-		write(socketfd,
-			"HTTP/1.1 404 Not Found\nContent-Length: 185\nConnection: close\nContent-Type: text/html\n\n<html><head>\n<title>404 Not Found</title>\n</head><body>\n<h1>Forbidden</h1>\nThe requested URL, file type or operation is not allowed on this simple static file webserver.\n</body></html>\n",
-			280);
-
-	}
-}
-
-struct stat filestatus;
-
-int rc = fstat(file_fd, &filestatus);
-if (rc < 0)
-	printf("error opening the file\n");
-fflush(stdout);
-pthread_mutex_lock(&mymutex);
-total_filesize += filestatus.st_size;
-pthread_mutex_unlock(&mymutex);
 
 	len = (long) lseek(file_fd, (off_t) 0, SEEK_END); /* lseek to the file end to find the length */
 	(void) lseek(file_fd, (off_t) 0, SEEK_SET); /* lseek back to the file start ready for reading */
-(void) sprintf(buffer,
-	"HTTP/1.1 200 OK\nServer: 207httpd/%d.0\nContent-Length: %ld\nConnection: close\nContent-Type: %s\n\n",
+	(void) sprintf(buffer,
+			"HTTP/1.1 200 OK\nServer: 207httpd/%d.0\nContent-Length: %ld\nConnection: close\nContent-Type: %s\n\n",
 			VERSION, len, fstr); /* Header + a blank line */
 
 	(void) write(socketfd, buffer, strlen(buffer));
@@ -888,8 +919,7 @@ pthread_mutex_unlock(&mymutex);
 	pthread_exit(NULL);
 }
 
-
-void send_and_close_socket(int socketfd, char *buffer){
+void send_and_close_socket(int socketfd, char *buffer) {
 
 	(void) write(socketfd, buffer, strlen(buffer));
 
@@ -905,134 +935,137 @@ int login_auth(char *un, char *pw) {
 	int size, last_id = 0, i;
 	size = user_data.size();
 	cout << "\n\n" << size << "\n\n";
-	if(size > 0){
+	if (size > 0) {
 		cout << "\n login_auth";
 
-		for( i=0; i<size; i++ ){
-			if(strncmp(user_data[i]->name.c_str(), un, min(strlen(un), user_data[i]->name.length())) == 0){
-				cout  << "\n\n\n\n";
-				cout << strncmp(user_data[i]->password.c_str(), pw, min(strlen(pw), user_data[i]->password.length()));
-				if(strncmp(user_data[i]->password.c_str(), pw, min(strlen(pw), user_data[i]->password.length())) == 0){
+		for (i = 0; i < size; i++) {
+			if (strncmp(user_data[i]->name.c_str(), un,
+					min(strlen(un), user_data[i]->name.length())) == 0) {
+				cout << "\n\n";
+				cout << strncmp(user_data[i]->password.c_str(), pw,
+								min(strlen(pw),
+										user_data[i]->password.length()));
+				if (strncmp(user_data[i]->password.c_str(), pw,
+						min(strlen(pw), user_data[i]->password.length()))
+						== 0) {
 					cout << "\nauthenticated";
 					assign_table(user_data[i]);
 					return user_data[i]->id;
 				}
 				cout << "\ninvalid password";
 				return -1;
-			} 
+			}
 			cout << "\nnew user";
 			last_id = user_data[i]->id;
 
 		}
 	}
+
 	
-	{
-		cout << "\nCreate New user";
-		u1->name = un;
-		u1->password = pw;
-		u1->balance = 1000;
-		u1->id = last_id+1;
-		user_data.push_back(u1);
-	}
+	cout << "\nCreate New user";
+	u1->name = un;
+	u1->password = pw;
+	u1->balance = 1000;
+	u1->id = last_id + 1;
+	user_data.push_back(u1);
+	tables->users.push_back(*u1);
+	
 	assign_table(u1);
-	
-	
+
 	return u1->id;
 
-	 // vector<string> data;
-	 // isOpenDB = ConnectDB();
-	 // char buff[1024];
-	 // sqlite3_stmt *statement;
-	 // sprintf(buff,
-	 // 		"SELECT id, balance from users where username = '%s' and password = '%s';",
-	 // 		un, pw);
-	 // cout << "\n query:" << buff;
-	 // char *query = buff;
+	// vector<string> data;
+	// isOpenDB = ConnectDB();
+	// char buff[1024];
+	// sqlite3_stmt *statement;
+	// sprintf(buff,
+	// 		"SELECT id, balance from users where username = '%s' and password = '%s';",
+	// 		un, pw);
+	// cout << "\n query:" << buff;
+	// char *query = buff;
 
-	 // if (sqlite3_prepare(dbfile, query, -1, &statement, 0) == SQLITE_OK) {
-	 // 	int ctotal = sqlite3_column_count(statement);
-	 // 	int res = 0;
+	// if (sqlite3_prepare(dbfile, query, -1, &statement, 0) == SQLITE_OK) {
+	// 	int ctotal = sqlite3_column_count(statement);
+	// 	int res = 0;
 
-	 // 	while (1)
+	// 	while (1)
 
-	 // 	{
-	 // 		res = sqlite3_step(statement);
+	// 	{
+	// 		res = sqlite3_step(statement);
 
-	 // 		if (res == SQLITE_ROW) {
-	 // 			for (int i = 0; i < ctotal; i++) {
-	 // 				data.push_back((char*) sqlite3_column_text(statement, i));
-	 // 			}
+	// 		if (res == SQLITE_ROW) {
+	// 			for (int i = 0; i < ctotal; i++) {
+	// 				data.push_back((char*) sqlite3_column_text(statement, i));
+	// 			}
 
-	 // 			cout << endl;
-	 // 		}
+	// 			cout << endl;
+	// 		}
 
-	 // 		if (res == SQLITE_DONE) {
-	 // 			//cout << "\nSize:" << data.size();
-	 // 			for (size_t n = 0; n < data.size(); n++) {
-	 // 				cout << "\ndata:" << data[n] << " ";
-	 // 				cout << endl;
-	 // 			}
+	// 		if (res == SQLITE_DONE) {
+	// 			//cout << "\nSize:" << data.size();
+	// 			for (size_t n = 0; n < data.size(); n++) {
+	// 				cout << "\ndata:" << data[n] << " ";
+	// 				cout << endl;
+	// 			}
 
+	// 		u1->id = 1;//data[0];
+	// 		u1->balance = 123;//data[1];
+	// 		u1->name = un;
+	// 		u1->no_of_cards = 0;
 
+	// 			if (data.size() == 0) {
+	// 				cout << "\nInvalid User Details, creating new user";
+	// 				//create_user(un, pw);
+	// 				return 0;
+	// 			}
+	// 			break;
+	// 		}
 
-	 // 		u1->id = 1;//data[0];
-	 // 		u1->balance = 123;//data[1];
-	 // 		u1->name = un;
-	 // 		u1->no_of_cards = 0;
+	// 	}
 
-	 // 			if (data.size() == 0) {
-	 // 				cout << "\nInvalid User Details, creating new user";
-	 // 				//create_user(un, pw);
-	 // 				return 0;
-	 // 			}
-	 // 			break;
-	 // 		}
-
-	 // 	}
-
-	 // 	return u1;
-	 // }
+	// 	return u1;
+	// }
 }
 
 int create_user(char *un, char *pw) {
-	 // isOpenDB = ConnectDB();
-	 // int balance = 1000;
-	 // std::stringstream strm;
-	 // strm << "insert into users(username,password,balance) values(" << un << ",'"
-	 // 		<< pw << "'," << balance << ")";
+	// isOpenDB = ConnectDB();
+	// int balance = 1000;
+	// std::stringstream strm;
+	// strm << "insert into users(username,password,balance) values(" << un << ",'"
+	// 		<< pw << "'," << balance << ")";
 
-	 // string s = strm.str();
-	 // char *str = &s[0];
+	// string s = strm.str();
+	// char *str = &s[0];
 
-	 // sqlite3_stmt *statement;
-	 // int result;
-	 // char *query = str;
-	 // {
-	 // 	if (sqlite3_prepare(dbfile, query, -1, &statement, 0) == SQLITE_OK) {
-	 // 		int res = sqlite3_step(statement);
-	 // 		result = res;
-	 // 		sqlite3_finalize(statement);
-	 // 	}
-	 // 	return result;
-	 // }
+	// sqlite3_stmt *statement;
+	// int result;
+	// char *query = str;
+	// {
+	// 	if (sqlite3_prepare(dbfile, query, -1, &statement, 0) == SQLITE_OK) {
+	// 		int res = sqlite3_step(statement);
+	// 		result = res;
+	// 		sqlite3_finalize(statement);
+	// 	}
+	// 	return result;
+	// }
 
 	return 0;
 }
 
 bool ConnectDB() {
-	 // if (sqlite3_open(DB, &dbfile) == SQLITE_OK) {
-	 // 	isOpenDB = true;
-	 // 	cout << "connection done";
-	 // 	return true;
-	 // }
+	// if (sqlite3_open(DB, &dbfile) == SQLITE_OK) {
+	// 	isOpenDB = true;
+	// 	cout << "connection done";
+	// 	return true;
+	// }
 
 	return false;
 }
 
 void DisonnectDB() {
-	 // if (isOpenDB == true) {
-	 // 	sqlite3_close(dbfile);
-	 // }
+	// if (isOpenDB == true) {
+	// 	sqlite3_close(dbfile);
+	// }
 }
 /*
 

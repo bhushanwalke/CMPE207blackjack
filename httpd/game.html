@@ -217,12 +217,18 @@
 		console.log("Player score = " + playerScore);
 		$("#player-score-value").html(playerScore);
 		if ( playerScore > 21 ) {
-			setTimeout(function() { alert("Busted!"); gameOver("lose") }, 1500);
+			playerLost();
+			setTimeout(function() { 
+				alert("Busted!"); 
+				gameOver("lose") }
+			, 1500);
+		
 			return;
 		}
 		else if (playerScore == 21)
 		{
 			if (player1.cards.length == 2) {
+				playerWon();
 				alert("blackjack!");
 				gameOver("win", true);
 				return;
@@ -237,6 +243,36 @@
 			}
 		}
 		
+	}
+
+	playerLost = function() {
+		var path = window.location.pathname;
+		var userId = path[path.length-1];
+		$.ajax({
+        	url: "http://127.0.0.1:8082/player-lost/"+userId, 
+        	success: function(result){
+        	},
+        	error: function(result){
+        		
+        		console.log("Error");	
+        		
+        	},
+	    });
+	}
+
+	playerWon = function() {
+		var path = window.location.pathname;
+		var userId = path[path.length-1];
+		$.ajax({
+        	url: "http://127.0.0.1:8082/player-won/"+userId, 
+        	success: function(result){
+        	},
+        	error: function(result){
+        		
+        		console.log("Error");	
+        		
+        	},
+	    });
 	}
 	
 	shuffleNewDeck = function() {
@@ -437,10 +473,12 @@
 			else {
 				playerScore = evaluateHand(player1.cards);
 				if ( dealerScore > 21) {
+					playerWon();
 					alert("Dealer busts. You win!");
 					gameOver("win");
 				}
 				else if ( dealerScore > playerScore ) {
+					playerLost();
 					alert("Dealer wins.");
 					gameOver("lose");
 				}
@@ -449,9 +487,11 @@
 					gameOver("push");
 				}
 				else { 
+					playerWon();
 					alert("You win!");
 					gameOver("win");
 				}
+				//update balance
 			}
 		}
 		

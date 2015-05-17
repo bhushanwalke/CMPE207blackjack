@@ -58,7 +58,7 @@ int evaluate_hand(int);
 void assign_table(user*);
 void save_users();
 void load_user_data();
-
+void shuffleNewDeck();
 
 
 struct deck{
@@ -74,7 +74,7 @@ deck d1;
 
 
 user u1;
-vector<user> user_data;
+vector<user*> user_data;
 /* Structure for saving tables */
 struct table {
 	int id;
@@ -168,16 +168,23 @@ void init_casino() {
 	// }
 	cout << "\nTable->user.size = " << tables->users.size();
 	//save_users();
+	shuffleNewDeck();
 	load_user_data();
 }
 
 void load_user_data() {
+	cout << "Load user data";
 	int i=0,	no_of_members=100;
 	string filePath;
 	ifstream  dimensionsInFile;
 
+	user *temp;
+
 	dimensionsInFile.open ("users.dat");	
-	cout << dimensionsInFile;											
+
+	int size = user_data.size();
+	cout << "\nSize = " << size;
+	//cout << dimensionsInFile;											
 	if (!dimensionsInFile)
 	{
 		cout<<"Cannot load file"<<endl;
@@ -186,19 +193,28 @@ void load_user_data() {
 	else
 	{
 		while(dimensionsInFile != NULL)
-		{	// write struct data from file	
-			dimensionsInFile>>
-			user_data[i].id>>
-			user_data[i].name>>
-			user_data[i].password>>		
-			user_data[i].balance;
+		{	
+			// write struct data from file	
+			temp = new user;
+			user_data.push_back(temp);
+			
+
+			// //cout << filePath;
+			dimensionsInFile >> user_data[i]->id
+							 >> user_data[i]->name
+							 >> user_data[i]->password		
+							 >> user_data[i]->balance;
 			cout<<"\nMember no "<<i<<"loaded"<<endl;
-			cout<< user_data[i].id<<
-			user_data[i].name<<
-			user_data[i].password<<		
-			user_data[i].balance;
+			cout<< user_data[i]->id<< " " <<
+			user_data[i]->name<< " " <<
+			user_data[i]->password<< " " <<		
+			user_data[i]->balance << "\n";
+
+			dimensionsInFile >> filePath;
+
+
 			i++;
-			cout << "\n" << i<<endl;
+			//cout << "\n" << i<<endl;
 			
 		}
 		cout <<"All members have been successfully loaded"<<endl;
@@ -231,16 +247,16 @@ void save_users()
 		for(int i = 0; i < user_data.size(); i++)
 		{	// write struct data from file	
 
-			dimensionsOutfile<<" "<<
-			user_data[i].id<<" "<<
-			user_data[i].name<<" "<<
-			user_data[i].password<<	" "<<	
-			user_data[i].balance<< "\n";
+			dimensionsOutfile<<
+			user_data[i]->id<<" "<<
+			user_data[i]->name<<" "<<
+			user_data[i]->password<<	" "<<	
+			user_data[i]->balance<< "\n";
 			cout<<"\n Member no "<<i<<"stored"<<endl;
 		}
 		cout <<"\nAll members have been successfully saved"<<endl;
-	dimensionsOutfile.close();
-}
+		dimensionsOutfile.close();
+	}
 
 }
 
@@ -340,7 +356,7 @@ void shuffle_array(int *card_value, int *card_img_no) {
 			card_img_no[top] = tmp;
 			
 		}
-	}
+}
 
 	int* get_card(int user_id){
 		cout << "get_card";
@@ -363,21 +379,21 @@ void shuffle_array(int *card_value, int *card_img_no) {
 	// 	current_table = current_table->next;
 	// }
 		int found = 0;
-		if(tables==NULL)
+		if(current_table == NULL)
 			cout << "TABLE NULL";
 		else{
 			cout << "table size = " << tables->users.size();
 		}
-		for(int k=0; k < tables->users.size() ; k++ ){
-			if(tables->users[k].id == user_id ){
-				found = 1;
-				break;
-			}
+		// for(int k=0; k < tables->users.size() ; k++ ){
+		// 	if(tables->users[k].id == user_id ){
+		// 		found = 1;
+		// 		break;
+		// 	}
 
-		}
+		// }
 
-		current_user = tables->users[user_id%10];
-		cout << "Current_user_id = " << u1.id;
+		// current_user = tables->users[user_id];
+		// cout << "Current_user_id = " << current_user.id;
 
 
 	int card_num = u1.no_of_cards;//user_ptr->no_of_cards;
@@ -406,8 +422,8 @@ void shuffle_array(int *card_value, int *card_img_no) {
 	// animateCardToLocation(wrappedCard, nextCard.file); 
 }
 
-int* get_dealer_card(int table_id){
-	int resp[2];
+int* get_dealer_card(int table_id, int* resp){
+	//int resp[2];
 	int card_num = d1.no_of_cards;
 	int next_card = d1.card_img_no[d1.index];
 
@@ -416,12 +432,13 @@ int* get_dealer_card(int table_id){
 	d1.no_of_cards++;
 	resp[0] = card_num;
 	resp[1] = next_card;
+	cout << "Got dealers card " << card_num << " " << next_card;
 	return resp;
-		// $("#dealerContainer").append("<img id=\"dealer-card" + cardNum + "\" src=\"\" >");
-		// var left = 300 + (25 * cardNum);
-		// var wrappedCard = $("#dealer-card" + cardNum);
-		// wrappedCard.css( { 'position' : 'absolute', 'height' : '96', 'width': '72', 'left': left, 'top': 50});
-		// animateCardToLocation(wrappedCard, cardNum == 0 ? downCardFile : nextCard.file);
+	// $("#dealerContainer").append("<img id=\"dealer-card" + cardNum + "\" src=\"\" >");
+	// var left = 300 + (25 * cardNum);
+	// var wrappedCard = $("#dealer-card" + cardNum);
+	// wrappedCard.css( { 'position' : 'absolute', 'height' : '96', 'width': '72', 'left': left, 'top': 50});
+	// animateCardToLocation(wrappedCard, cardNum == 0 ? downCardFile : nextCard.file);
 }
 
 int evaluate_hand(int user_id){
@@ -642,14 +659,17 @@ break;
 	}
 	else if (strncmp(&buffer[0], "GET /get-dealer-card\0", 18) == 0
 		|| strncmp(&buffer[0], "get /get-dealer-card\0", 18) == 0) {
-		cout<<"here2";
+		cout<<"\n\nhere2";
 	pthread_mutex_lock(&mymutex);
 	good_requests += 1;
 	pthread_mutex_unlock(&mymutex);
-	int* resp = get_dealer_card(0); 
+	int* arr = new int[2];
+	//int* resp;// = arr;
+	arr = get_dealer_card(0, arr); 
+	cout << "\n Resp get dealer card = " << arr[0] << " " << arr[1];
 	(void) sprintf(buffer,
 		"HTTP/1.1 200 OK\nServer: 207httpd/%d.0\nContent-Length: %ld\nConnection: close\nContent-Type: %s\n\n{\"card_no\":%d, \"next_card\":%d} \n",
-				VERSION, 35, "text/html", resp[0], resp[1]); /* Header + a blank line */
+				VERSION, 31, "text/html", arr[0], arr[1]); /* Header + a blank line */
 		
 		send_and_close_socket(socketfd,buffer);
 	} 
@@ -698,7 +718,7 @@ break;
 
 
 		//(void) strcpy(buffer, "GET /httpd/game.html");
-				int user_id = (int)buffer[14] - 48;
+				int user_id = 1;//(int)buffer[14] - 48;
 				cout<<"User Id:"<<user_id<<endl;
 
 				pthread_mutex_lock(&mymutex);
@@ -721,7 +741,7 @@ break;
 					good_requests += 1;
 					pthread_mutex_unlock(&mymutex);
 
-					shuffleNewDeck();
+					//shuffleNewDeck();
 					(void) sprintf(buffer,
 						"HTTP/1.1 200 OK\nServer: 207httpd/%d.0\nContent-Length: %ld\nConnection: close\nContent-Type: %s\n\n{\"a\":1,\"b\":2}\n",
 				VERSION, 14, "text/html"); /* Header + a blank line */
@@ -882,36 +902,39 @@ int login_auth(char *un, char *pw) {
 
 	string s;
 	user *u1 = new user;
-	int size, last_id = -1, i;
+	int size, last_id = 0, i;
 	size = user_data.size();
-	
+	cout << "\n\n" << size << "\n\n";
 	if(size > 0){
 		cout << "\n login_auth";
 
 		for( i=0; i<size; i++ ){
-			if(strncmp(user_data[i].name.c_str(), un, min(strlen(un), user_data[i].name.length())) == 0){
-				if(strncmp(user_data[i].password.c_str(), pw, min(strlen(pw), user_data[i].password.length())) == 0){
-					//authenticated
-					assign_table(&user_data[i]);
-					return user_data[i].id;
+			if(strncmp(user_data[i]->name.c_str(), un, min(strlen(un), user_data[i]->name.length())) == 0){
+				cout  << "\n\n\n\n";
+				cout << strncmp(user_data[i]->password.c_str(), pw, min(strlen(pw), user_data[i]->password.length()));
+				if(strncmp(user_data[i]->password.c_str(), pw, min(strlen(pw), user_data[i]->password.length())) == 0){
+					cout << "\nauthenticated";
+					assign_table(user_data[i]);
+					return user_data[i]->id;
 				}
-				//invalid password
+				cout << "\ninvalid password";
 				return -1;
 			} 
-			//new user
-			last_id = user_data[i].id;
+			cout << "\nnew user";
+			last_id = user_data[i]->id;
 
 		}
 	}
-	else{
-
+	
+	{
+		cout << "\nCreate New user";
 		u1->name = un;
 		u1->password = pw;
 		u1->balance = 1000;
-		u1->id = 1;
-		user_data.push_back(*u1);
+		u1->id = last_id+1;
+		user_data.push_back(u1);
 	}
-	//assign_table(u1);
+	assign_table(u1);
 	
 	
 	return u1->id;

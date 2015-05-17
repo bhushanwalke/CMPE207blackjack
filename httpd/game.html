@@ -53,7 +53,7 @@
  <div id ="outerContainer">
  <div id="deckContainer">
 <!--	<img id="deck-image" src="images/b2fv.png" width="71" height="96"/>-->
-	<img id="small-card" src="images/b2fv.png" width="35" height="48" />
+	<img id="small-card" src="../images/b2fv.png" width="35" height="48" />
  </div>
  <div id="dealerContainer">
  </div>
@@ -240,7 +240,7 @@
 	}
 	
 	shuffleNewDeck = function() {
-		downCardFile = "images/b2fv.png";
+		downCardFile = "../images/b2fv.png";
 		cards=[];
 		value = 14;
 
@@ -260,7 +260,7 @@
 		j = 0;
 		for (var i = 1; i <= 52; ++i)
 		{
-			cards[i]= { "file" : "images/" + i + ".png", "value" : value };
+			cards[i]= { "file" : "../images/" + i + ".png", "value" : value };
 			j++;
 			j = j % 4;
 			if ( j == 0) value--;
@@ -275,7 +275,7 @@
 	drawCards = function(cards, prefix) {
 		console.log(cards);
 		for (i = 0; i < cards.length; i++) {
-			$("#" + prefix + i).attr("src", "images/"+cards[i]+".png");
+			$("#" + prefix + i).attr("src", "../images/"+cards[i]+".png");
 			$("#" + prefix + i).show();
 		}
 	}
@@ -298,8 +298,11 @@
 		// player1.cards[cardNum] = nextCard;
 		var cardNum;
 		var	nextCard;
+		var path = window.location.pathname;
+		var userId = path[path.length-1];
+		console.log("1112312user_id =" + userId);
 		$.ajax({
-	        	url: "http://127.0.0.1:8082/get-card/"+user_id, 
+	        	url: "http://127.0.0.1:8082/get-card/"+userId, 
 	        	success: function(result){
 	        		obj = JSON.parse(result);
 	        		console.log(obj);
@@ -316,7 +319,7 @@
 					
 					var wrappedCard = $("#card" + cardNum);		
 				    wrappedCard.css({ 'position' : 'absolute', 'height' : '96', 'width': '72', 'left': left, 'top':50 });
-					animateCardToLocation(wrappedCard, "images/" + nextCard + ".png"); 
+					animateCardToLocation(wrappedCard, "../images/" + nextCard + ".png"); 
 	        	},
 	        	error: function(result){
 	        		
@@ -331,8 +334,10 @@
 	
 	getDealerCard = function() {
 		var cardNum, nextCard;
+		var path = window.location.pathname;
+		var userId = path[path.length-1];
 		$.ajax({
-	        	url: "http://127.0.0.1:8082/get-dealer-card/", 
+	        	url: "../get-dealer-card/"+userId, 
 	        	success: function(result){
 	        		obj = JSON.parse(result);
 	        		console.log("GetDealerCard");
@@ -346,7 +351,7 @@
 					var left = 300 + (25 * cardNum);
 					var wrappedCard = $("#dealer-card" + cardNum);
 					wrappedCard.css( { 'position' : 'absolute', 'height' : '96', 'width': '72', 'left': left, 'top': 50});
-					animateCardToLocation(wrappedCard, cardNum == 0 ? downCardFile : "images/" + nextCard + ".png");
+					animateCardToLocation(wrappedCard, cardNum == 0 ? downCardFile : "../images/" + nextCard + ".png");
 	        	},
 	        	error: function(result){
 	        		

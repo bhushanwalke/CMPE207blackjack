@@ -62,6 +62,7 @@ void shuffleNewDeck();
 void clear_user_cards(int);
 void player_lost(int);
 void player_won(int);
+int get_user_data(int);
 
 struct deck {
 	int card_img_no[52];
@@ -204,7 +205,7 @@ void load_user_data() {
 					<< "\n";
 
 			tables->users.push_back(*user_data[i]);
-			dimensionsInFile >> filePath;
+			//dimensionsInFile >> filePath;
 
 			i++;
 			//cout << "\n" << i<<endl;
@@ -351,12 +352,22 @@ void shuffle_array(int *card_value, int *card_img_no) {
 
 int* get_card(int user_id) {
 	cout << "get_card";
-	int arr[2];
+	int arr[3];
 	/*user* user_ptr = search_or_create_user(user_id);
 	 */
 	table* current_table = tables;
 	int user_index = -1;
 	user current_user;
+
+	int size = tables->users.size();
+	user* temp;
+	for(int i=0; i<size-1; i++){
+		if(tables->users[i].id == user_id){
+			cout << "\nUser id = " << tables->users[i].id;
+			temp = &(tables->users[i]);
+			break;
+		}  
+	}
 
 	// while(current_table != NULL && user_index == -1){
 	// 	for(int i=0; i < current_table->users.size() > 0 ; i++){
@@ -386,16 +397,18 @@ int* get_card(int user_id) {
 	// current_user = tables->users[user_id];
 	// cout << "Current_user_id = " << current_user.id;
 
-	int card_num = u1.no_of_cards;		//user_ptr->no_of_cards;
+	cout << "\nCurrent user balance : "<< temp->balance;
+	arr[2] = temp->balance;
+	int card_num = temp->no_of_cards;		//user_ptr->no_of_cards;
 	int next_card = d1.card_img_no[d1.index];
 
-	u1.cards[card_num] = d1.card_value[d1.index];
+	temp->cards[card_num] = d1.card_value[d1.index];
 
 	d1.index--;
 
 	arr[0] = card_num;
 	arr[1] = next_card;
-	u1.no_of_cards++;
+	temp->no_of_cards++;
 
 	/*
 	 int next_card = d1.card_value[d1.index];
@@ -434,12 +447,21 @@ int* get_dealer_card(int table_id, int* resp) {
 int evaluate_hand(int user_id) {
 	int value = 0;
 	int num_aces = 0;
-	int no_of_cards = u1.no_of_cards;
-	int *user_cards = u1.cards;
+	int size = tables->users.size();
+	user* temp;
+	for(int i=0; i<size-1; i++){
+		if(tables->users[i].id == user_id){
+			cout << "\nUser id = " << tables->users[i].id;
+			temp = &(tables->users[i]);
+			break;
+		}  
+	}
+
+	int no_of_cards = temp->no_of_cards;
+	int *user_cards = temp->cards;
 
 	
 	for (int i = 0; i < no_of_cards; i++) {
-		//console.log(cardList[i].value);
 		if (user_cards[i] >= 10 && user_cards[i] <= 13)
 			value = value + 10;
 		else if (user_cards[i] == 14) {
@@ -453,7 +475,7 @@ int evaluate_hand(int user_id) {
 		value = value - 10;
 		num_aces--;
 	}
-	save_users();
+
 	return value;
 }
 
@@ -463,7 +485,6 @@ int evaluate_dealer_hand(int table_id) {
 	int no_of_cards = d1.no_of_cards;
 	int *dealer_cards = d1.cards;
 	for (int i = 0; i <= no_of_cards; i++) {
-		//console.log(cardList[i].value);
 
 		if (dealer_cards[i] >= 10 && dealer_cards[i] <= 13)
 			value = value + 10;
@@ -484,21 +505,47 @@ int evaluate_dealer_hand(int table_id) {
 
 void player_lost(int user_id){
 	int size = tables->users.size();
-	cout << size << "\n";
-	if (size > user_id){
-		tables->users[user_id].balance -= 10;
-	//	u1.balance -= 10;
+	user* temp;
+	for(int i=0; i<size; i++){
+		if(tables->users[i].id == user_id){
+			cout << "\nUser id = " << tables->users[i].id;
+			temp = &(tables->users[i]);
+			temp->balance -= 10;
+			temp->no_of_cards = 0;
+			break;
+		}  
 	}
+
 }
 
 void player_won(int user_id){
 	int size = tables->users.size();
-	cout << size << "\n";
-	if (size > user_id){
-		tables->users[user_id].balance += 10;
-		//u1.balance += 10;
+
+	user* temp;
+	for(int i=0; i<size; i++){
+		if(tables->users[i].id == user_id){
+			cout << "\nUser id = " << tables->users[i].id;
+			temp = &(tables->users[i]);
+			temp->balance -= 10;
+			temp->no_of_cards = 0;
+			break;
+		}  
 	}
 
+}
+
+int get_user_data(int u_id){
+
+	int size = tables->users.size();
+	cout << "\nuser size = " << size;
+	for(int i=0; i<size; i++){
+		if(tables->users[i].id == u_id){
+			cout << "\nUser balance = " << tables->users[i].balance;
+			return tables->users[i].balance;
+		}  
+	}
+	cout << "User not found";
+	return 3000;//test val
 }
 
 void hit(int user_id) {
@@ -661,7 +708,25 @@ void handle_request(int socketfd) {
 			send_and_close_socket(socketfd, buffer);
 		}
 
-	} else if (strncmp(&buffer[0], "GET /player-lost\0", 13) == 0
+	}  
+	else if (strncmp(&buffer[0], "GET /get-user-data\0", 13) == 0
+			|| strncmp(&buffer[0], "get /get-user-data\0", 13) == 0) {
+		int user_id = (int) buffer[19] - 48;
+		cout << "Get user data id:" << user_id << endl;
+		pthread_mutex_lock(&mymutex);
+		good_requests += 1;
+		pthread_mutex_unlock(&mymutex);
+		int* arr = new int[2];
+		//int* resp;// = arr;
+
+		int bal = get_user_data(user_id);
+		cout << "\n balance = " << bal;
+		(void) sprintf(buffer,
+				"HTTP/1.1 200 OK\nServer: 207httpd/%d.0\nContent-Length: %ld\nConnection: close\nContent-Type: %s\n\n{\"balance\":%d} \n",
+				VERSION, 16, "text/html", bal); /* Header + a blank line */
+
+		send_and_close_socket(socketfd, buffer);
+	}else if (strncmp(&buffer[0], "GET /player-lost\0", 13) == 0
 			|| strncmp(&buffer[0], "get /player-lost\0", 13) == 0) {
 		cout << "\npalyer-lost";
 		int user_id = (int) buffer[17] - 48;
@@ -736,12 +801,13 @@ void handle_request(int socketfd) {
 			|| strncmp(&buffer[0], "get /evaluate-hand\0", 12) == 0) {
 
 		//(void) strcpy(buffer, "GET /httpd/game.html");
-
+		int user_id = (int) buffer[19] - 48;
+		cout << "User lost id:" << user_id << endl;
 		pthread_mutex_lock(&mymutex);
 		good_requests += 1;
 		pthread_mutex_unlock(&mymutex);
 
-		int player_score = evaluate_hand(1);
+		int player_score = evaluate_hand(user_id);
 
 		(void) sprintf(buffer,
 				"HTTP/1.1 200 OK\nServer: 207httpd/%d.0\nContent-Length: %ld\nConnection: close\nContent-Type: %s\n\n{\"player_score\":%d}  \n",
@@ -751,7 +817,7 @@ void handle_request(int socketfd) {
 			|| strncmp(&buffer[0], "get /get-card\0", 9) == 0) {
 
 		//(void) strcpy(buffer, "GET /httpd/game.html");
-		int user_id = 1;	//(int)buffer[14] - 48;
+		int user_id = (int)buffer[14] - 48;
 		cout << "User Id:" << user_id << endl;
 
 		pthread_mutex_lock(&mymutex);
@@ -761,8 +827,8 @@ void handle_request(int socketfd) {
 		int* arr = get_card(user_id);
 
 		(void) sprintf(buffer,
-				"HTTP/1.1 200 OK\nServer: 207httpd/%d.0\nContent-Length: %ld\nConnection: close\nContent-Type: %s\n\n{\"card_no\":%d, \"next_card\":%d}  \n",
-				VERSION, 30, "text/html", arr[0], arr[1]); /* Header + a blank line */
+				"HTTP/1.1 200 OK\nServer: 207httpd/%d.0\nContent-Length: %ld\nConnection: close\nContent-Type: %s\n\n{\"card_no\":%d, \"next_card\":%d, \"balance\":%d}  \n",
+				VERSION, 46, "text/html", arr[0], arr[1], arr[2]); /* Header + a blank line */
 		send_and_close_socket(socketfd, buffer);
 	} else if (strncmp(&buffer[0], "GET /shuffleNewDeck\0", 9) == 0
 			|| strncmp(&buffer[0], "get /shuffleNewDeck\0", 9) == 0) {
@@ -938,25 +1004,25 @@ int login_auth(char *un, char *pw) {
 	if (size > 0) {
 		cout << "\n login_auth";
 
-		for (i = 0; i < size; i++) {
-			if (strncmp(user_data[i]->name.c_str(), un,
-					min(strlen(un), user_data[i]->name.length())) == 0) {
+		for (i = 0; i < size-1; i++) {
+			if (strncmp(tables->users[i].name.c_str(), un,
+					min(strlen(un), tables->users[i].name.length())) == 0) {
 				cout << "\n\n";
-				cout << strncmp(user_data[i]->password.c_str(), pw,
+				cout << strncmp(tables->users[i].password.c_str(), pw,
 								min(strlen(pw),
-										user_data[i]->password.length()));
-				if (strncmp(user_data[i]->password.c_str(), pw,
-						min(strlen(pw), user_data[i]->password.length()))
+										tables->users[i].password.length()));
+				if (strncmp(tables->users[i].password.c_str(), pw,
+						min(strlen(pw), tables->users[i].password.length()))
 						== 0) {
 					cout << "\nauthenticated";
-					assign_table(user_data[i]);
-					return user_data[i]->id;
+					assign_table(&(tables->users[i]));
+					return tables->users[i].id;
 				}
 				cout << "\ninvalid password";
 				return -1;
 			}
 			cout << "\nnew user";
-			last_id = user_data[i]->id;
+			last_id = tables->users[i].id;
 
 		}
 	}

@@ -49,7 +49,9 @@
  </head>                                                                  
  <body>      
  <center><b><font size = "6" color = "gold">BLACKJACK</font></b></center>
+ <button id="logout" style="margin-left:550px">Logout</button>
 <h3><font color = "yellow">Dealer</font></h3> 
+
  <div id ="outerContainer">
  <div id="deckContainer">
 <!--	<img id="deck-image" src="images/b2fv.png" width="71" height="96"/>-->
@@ -103,7 +105,7 @@
 
 <script>
 
-		playerChips=1000;
+		playerChips=0;
 	
 
 	function shuffle(array) {
@@ -140,10 +142,13 @@
 		return value;
 	}
 	evaluateHand = function(cardList) {
-
+		var path = window.location.pathname;
+		var userId = path[path.length-1];
+		console.log(path);
+		console.log(userId);
 		var value;
 		$.ajax({
-	        	url: "http://127.0.0.1:8082/evaluate-hand/"+user_id, 
+	        	url: "http://127.0.0.1:8082/evaluate-hand/"+userId, 
 	        	success: function(result){
 	        		obj = JSON.parse(result);
 	        		console.log(obj);
@@ -304,6 +309,25 @@
 		shuffle(cards);
 	}
 	
+	getUserData = function() {
+		var path = window.location.pathname;
+		var userId = path[path.length-1];
+
+		$.ajax({
+	        	url: "http://127.0.0.1:8082/get-user-data/"+userId, 
+	        	success: function(result){
+	        		obj = JSON.parse(result);
+	        		console.log(obj);
+	        		playerChips = obj.balance;
+	        		$("#player-chips-value").html(playerChips);
+	        	},
+	        	error: function(result){
+	        		
+	        		console.log("Error");	
+	        		
+	        	},
+	    });
+	}
 	/**
 	* TODO dealer blackjack
 	*/
@@ -344,7 +368,7 @@
 	        		console.log(obj);
 	        		cardNum = obj.card_no;
 	        		nextCard = obj.next_card;
-	        		playerScore = obj.player_score;
+	        		playerChips = obj.balance;
 	        		console.log("Result =");
 	        		console.log(cardNum);
 	        		console.log(nextCard);
@@ -352,7 +376,7 @@
 	        		console.log(player1.cards[cardNum]);
 					$("#container").append("<img id=\"card" + cardNum + "\" src=\"\" />");
 				    var left = 300 + (25 * cardNum); 
-					
+					$("#player-chips-value").html(playerChips);
 					var wrappedCard = $("#card" + cardNum);		
 				    wrappedCard.css({ 'position' : 'absolute', 'height' : '96', 'width': '72', 'left': left, 'top':50 });
 					animateCardToLocation(wrappedCard, "../images/" + nextCard + ".png"); 
@@ -385,6 +409,7 @@
 					console.log(nextCard);
 					$("#dealerContainer").append("<img id=\"dealer-card" + cardNum + "\" src=\"\" >");
 					var left = 300 + (25 * cardNum);
+					downCardFile = "../images/b2fv.png";
 					var wrappedCard = $("#dealer-card" + cardNum);
 					wrappedCard.css( { 'position' : 'absolute', 'height' : '96', 'width': '72', 'left': left, 'top': 50});
 					animateCardToLocation(wrappedCard, cardNum == 0 ? downCardFile : "../images/" + nextCard + ".png");
@@ -434,12 +459,12 @@
 	
 		smallCardOffset = { "top" : 0, "left": 308 } 
 		gameOver("push");
-		 $("#player-chips-value").html(playerChips);
-	
+		// $("#player-chips-value").html(playerChips);
+		getUserData();
 		$('#deal').bind('click', function() {
 			clearScreen();
 
-			shuffleNewDeck();
+			//shuffleNewDeck();
 			player1 = new Player();
 			
 			console.log("User ID =" + user_id);
@@ -460,6 +485,10 @@
 			return true;
 		});
 		
+		$('#logout').bind('click', function() {
+			window.location = "http://127.0.0.1:8082";
+		});
+
 		nextDealerInterval = function () {
 			console.log("nextDealerInterval");
 			dealerScore = evaluateDealerHand(dealerCards);
